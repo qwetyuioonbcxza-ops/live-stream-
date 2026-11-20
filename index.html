@@ -1,1 +1,1291 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kukie Live</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: linear-gradient(180deg, #f8f4ff 0%, #efe7ff 100%); color: #1b1626; min-height: 100vh; }
+    .container { max-width: 520px; margin: 0 auto; min-height: 100vh; background: #ffffff; display: flex; flex-direction: column; box-shadow: 0 8px 30px rgba(70, 35, 140, 0.08); }
+    .hidden { display: none !important; }
 
+    /* Login Screen */
+    .login-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .login-card { width: 100%; background: #fff; border-radius: 24px; padding: 28px 22px; box-shadow: 0 12px 35px rgba(86, 44, 173, 0.12); text-align: center; border: 1px solid #efe7ff; }
+    .brand-icons { font-size: 38px; margin-bottom: 10px; }
+    .brand-title { font-size: 28px; font-weight: 800; color: #181322; margin-bottom: 8px; }
+    .brand-sub { font-size: 14px; color: #59526b; line-height: 1.5; margin-bottom: 16px; }
+    .bonus-badge { display: inline-block; background: #ede4ff; color: #5b21b6; font-weight: 700; font-size: 13px; padding: 6px 14px; border-radius: 999px; margin-bottom: 16px; }
+    .input-box { width: 100%; padding: 13px 15px; border: 1.5px solid #e2d9f7; border-radius: 14px; font-size: 14px; margin-bottom: 12px; outline: none; }
+    .input-box:focus { border-color: #7c3aed; }
+    .btn-primary { width: 100%; padding: 14px; border: none; border-radius: 14px; background: #7c3aed; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; }
+    .btn-primary:hover { background: #6d28d9; }
+    .login-note { margin-top: 14px; font-size: 12px; color: #716a84; }
+
+    /* App Shell */
+    .top-bar { background: #1c162b; color: #fff; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .user-info { display: flex; flex-direction: column; }
+    .user-name { font-weight: 700; font-size: 15px; }
+    .user-sub { font-size: 12px; color: #cbbdf0; }
+    .coin-pill { background: #2d2346; border: 1px solid #59448a; color: #ffd54f; padding: 6px 12px; border-radius: 999px; font-weight: 700; font-size: 13px; white-space: nowrap; }
+    .btn-small { background: #362a54; color: #fff; border: none; padding: 7px 11px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+    /* Wallet & Settings Bar */
+    .wallet-bar { background: #261d3b; color: #fff; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid #3c2e5c; }
+    .wallet-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .btn-wallet { border: none; padding: 7px 12px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .btn-deposit { background: #22c55e; color: #052e16; }
+    .btn-withdraw { background: #f59e0b; color: #1f1300; }
+    .btn-settings { background: #7c3aed; color: #fff; }
+
+    .tabs { display: flex; background: #f4efff; border-bottom: 1px solid #e4d8ff; }
+    .tab-btn { flex: 1; padding: 11px 6px; border: none; background: transparent; font-weight: 700; font-size: 12px; color: #564975; cursor: pointer; }
+    .tab-btn.active { color: #7c3aed; border-bottom: 3px solid #7c3aed; background: #fff; }
+
+    .section { flex: 1; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+
+    /* Live Section */
+    .start-live-box { background: #1f1733; color: #fff; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .start-live-row { display: flex; gap: 8px; }
+    .start-live-row input { flex: 1; margin-bottom: 0; }
+    .btn-live-go { background: #ef4444; color: #fff; border: none; padding: 0 16px; border-radius: 12px; font-weight: 800; font-size: 13px; cursor: pointer; white-space: nowrap; }
+    .live-cards { display: flex; flex-direction: column; gap: 10px; }
+    .live-card { background: #fff; border: 1px solid #e9e0ff; border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .live-badge { display: inline-block; background: #fee2e2; color: #dc2626; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; margin-right: 6px; }
+    .free-pill { display: inline-block; background: #dcfce7; color: #166534; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; margin-left: 6px; }
+
+    .live-stage { background: #151022; color: #fff; border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .live-screen { background: radial-gradient(circle at top, #3b226e, #161026); border: 1px solid #4c347d; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .live-top-meta { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+
+    .multi-live-grid { display: grid; gap: 8px; }
+    .multi-live-grid.cols-1 { grid-template-columns: 1fr; }
+    .multi-live-grid.cols-2,
+    .multi-live-grid.cols-3,
+    .multi-live-grid.cols-4 { grid-template-columns: repeat(2, 1fr); }
+
+    .live-slot-card { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(196, 181, 253, 0.35); border-radius: 12px; padding: 12px 8px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 92px; }
+    .live-slot-avatar { font-size: 26px; }
+    .live-slot-name { font-size: 12px; font-weight: 700; color: #fff; }
+    .live-slot-role { font-size: 10px; color: #cbbdf0; background: rgba(124, 58, 237, 0.35); padding: 2px 7px; border-radius: 999px; }
+
+    .live-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .btn-cohost { background: #ec4899; color: #fff; border: none; padding: 8px 10px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .btn-add-user { background: #06b6d4; color: #042f2e; border: none; padding: 8px 10px; border-radius: 10px; font-size: 12px; font-weight: 800; cursor: pointer; }
+
+    .add-user-picker { background: #22183a; border: 1px solid #473278; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .user-pick-row { display: flex; justify-content: space-between; align-items: center; background: #2c204a; padding: 8px 10px; border-radius: 10px; font-size: 12px; gap: 6px; }
+    .btn-pick-add { background: #22c55e; color: #052e16; border: none; padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; }
+
+    .live-comments-box { background: #201834; border: 1px solid #392a5e; border-radius: 12px; max-height: 150px; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+    .live-comment-item { font-size: 12px; background: #2b2045; padding: 6px 10px; border-radius: 10px; color: #f5f3ff; }
+    .live-comment-user { font-weight: 700; color: #c4b5fd; margin-right: 6px; }
+    .live-comment-row { display: flex; gap: 8px; }
+    .live-comment-row input { flex: 1; margin-bottom: 0; background: #271d3d; color: #fff; border-color: #463473; }
+
+    /* Follow Buttons & Directory */
+    .btn-follow { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; padding: 7px 11px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; white-space: nowrap; }
+    .btn-follow.following { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+    .follow-summary-bar { background: #f8f4ff; border: 1px solid #e5d8ff; border-radius: 14px; padding: 10px 12px; font-size: 12px; font-weight: 700; color: #4c1d95; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
+
+    /* Groups Section */
+    .create-group-box { background: #f8f4ff; border: 1px solid #e5d8ff; border-radius: 16px; padding: 12px; display: flex; gap: 8px; }
+    .create-group-box input { flex: 1; margin-bottom: 0; }
+    .group-list { display: flex; flex-direction: column; gap: 10px; }
+    .group-card { background: #fff; border: 1px solid #e9e0ff; border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .group-title { font-weight: 700; font-size: 15px; color: #1d162e; }
+    .group-meta { font-size: 12px; color: #6c6480; margin-top: 2px; }
+    .group-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .btn-join { background: #7c3aed; color: #fff; border: none; padding: 8px 12px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; }
+
+    /* Chat / Messenger Section */
+    .chat-header { background: #231b36; color: #fff; padding: 10px 14px; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+    .chat-room-title { font-weight: 700; font-size: 14px; }
+    .chat-room-sub { font-size: 11px; color: #c7b9eb; }
+    .call-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .btn-call { border: none; padding: 8px 10px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; color: #fff; }
+    .btn-audio { background: #0ea5e9; }
+    .btn-video { background: #8b5cf6; }
+    .btn-group-jump { background: #10b981; color: #052e16; }
+    .btn-gift-open { background: #f59e0b; color: #1b1300; }
+
+    .free-msg-banner { background: #f4efff; border: 1px solid #dfd0ff; color: #4c1d95; font-size: 12px; font-weight: 700; padding: 8px 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
+
+    .messages-box { flex: 1; min-height: 220px; max-height: 320px; overflow-y: auto; background: #faf8ff; border: 1px solid #ece4ff; border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .msg-item { background: #fff; border: 1px solid #ece5ff; padding: 9px 12px; border-radius: 12px; max-width: 88%; }
+    .msg-item.mine { align-self: flex-end; background: #ede4ff; border-color: #d6c3ff; }
+    .msg-sender { font-size: 11px; font-weight: 700; color: #6d28d9; margin-bottom: 2px; }
+    .msg-text { font-size: 14px; color: #1e182c; word-break: break-word; }
+    .msg-time { font-size: 10px; color: #7a728e; margin-top: 3px; text-align: right; }
+
+    .chat-input-row { display: flex; gap: 8px; }
+    .chat-input-row input { flex: 1; margin-bottom: 0; }
+
+    /* Modals */
+    .overlay { position: fixed; inset: 0; background: rgba(15, 10, 26, 0.65); display: flex; align-items: flex-end; justify-content: center; z-index: 50; }
+    .overlay.center { align-items: center; padding: 16px; }
+    .gift-sheet { width: 100%; max-width: 520px; background: #1d162c; color: #fff; border-radius: 24px 24px 0 0; padding: 18px 16px 24px; max-height: 82vh; display: flex; flex-direction: column; gap: 12px; }
+    .sheet-top { display: flex; align-items: center; justify-content: space-between; }
+    .sheet-title { font-size: 16px; font-weight: 800; }
+    .btn-close { background: #31254a; color: #fff; border: none; width: 32px; height: 32px; border-radius: 999px; font-size: 16px; cursor: pointer; }
+    .gift-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; overflow-y: auto; padding-right: 2px; }
+    .gift-card { background: #291f3e; border: 2px solid transparent; border-radius: 14px; padding: 10px 8px; text-align: center; cursor: pointer; }
+    .gift-card.selected { border-color: #fbbf24; background: #362854; }
+    .gift-emoji { font-size: 24px; }
+    .gift-name { font-size: 13px; font-weight: 700; margin-top: 4px; }
+    .gift-price { font-size: 12px; color: #ffd54f; font-weight: 700; margin-top: 2px; }
+    .sheet-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 6px; }
+    .btn-send-gift { background: #7c3aed; color: #fff; border: none; padding: 12px 18px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+
+    .modal-card { width: 100%; max-width: 440px; background: #191326; color: #fff; border-radius: 22px; padding: 20px 18px; display: flex; flex-direction: column; gap: 12px; }
+    .legal-box { background: #241a38; border: 1px solid #443170; border-radius: 14px; padding: 12px; font-size: 12px; line-height: 1.5; color: #e9d5ff; }
+    .legal-heading { font-weight: 800; color: #ffd54f; margin-bottom: 4px; font-size: 13px; }
+
+    /* Call Modal */
+    .call-modal { width: 92%; max-width: 420px; background: #191326; color: #fff; border-radius: 22px; padding: 24px 18px; text-align: center; align-self: center; }
+    .call-avatar { width: 76px; height: 76px; border-radius: 999px; background: #322452; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 12px; }
+    .call-status { font-size: 13px; color: #cbbdf0; margin: 6px 0 14px; }
+    .call-cost-box { background: #271d3d; border-radius: 12px; padding: 10px; font-size: 13px; color: #ffd54f; margin-bottom: 16px; }
+    .btn-hangup { background: #ef4444; color: #fff; border: none; padding: 12px 22px; border-radius: 999px; font-weight: 700; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Login View -->
+    <div id="loginView" class="login-wrap">
+      <div class="login-card">
+        <div class="brand-icons">💜 🎙️</div>
+        <div class="brand-title">Kukie Live</div>
+        <div class="brand-sub">জিমেইল দিয়ে লগইন করুন—তাহলে আপনার কয়েন, পয়েন্ট ও অ্যাকাউন্ট সবসময় সুরক্ষিত থাকবে।</div>
+        <div class="bonus-badge">🎁 নতুন আইডিতে ৫০ কয়েন ফ্রি + ৬টি মেসেজ ফ্রি + ফ্রি লাইভ!</div>
+        <input id="emailInput" class="input-box" type="email" placeholder="আপনার Gmail ঠিকানা লিখুন (যেমন: user@gmail.com)" />
+        <input id="nameInput" class="input-box" type="text" placeholder="আপনার নাম লিখুন (যেমন: rafi)" />
+        <button id="loginBtn" class="btn-primary">Continue with Gmail</button>
+        <div class="login-note">জিমেইল সেভ থাকলে অ্যাপ নষ্ট বা রিলোড হলেও আপনার ডেটা হারিয়ে যাবে না।</div>
+      </div>
+    </div>
+
+    <!-- Main App View -->
+    <div id="appView" class="hidden" style="display:flex; flex-direction:column; flex:1;">
+      <div class="top-bar">
+        <div class="user-info">
+          <span id="displayUserName" class="user-name">User</span>
+          <span id="displayUserEmail" class="user-sub">user@gmail.com</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span id="coinBalance" class="coin-pill">🪙 0</span>
+          <button id="logoutBtn" class="btn-small">বের হন</button>
+        </div>
+      </div>
+
+      <!-- Deposit, Withdraw & Settings Bar -->
+      <div class="wallet-bar">
+        <span id="currentLangBadge" style="font-size:12px; color:#cbbdf0; font-weight:700;">🌐 ভাষা: বাংলা</span>
+        <div class="wallet-actions">
+          <button id="openDepositBtn" class="btn-wallet btn-deposit">➕ টাকা ঢোকান</button>
+          <button id="openWithdrawBtn" class="btn-wallet btn-withdraw">💸 উইথড্র</button>
+          <button id="openSettingsBtn" class="btn-wallet btn-settings">⚙️ সেটিং</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button id="tabLive" class="tab-btn active">🔴 ভিডিও লাইভ</button>
+        <button id="tabChat" class="tab-btn">💬 মেসেজ ও কল</button>
+        <button id="tabGroups" class="tab-btn">👥 গ্রুপ</button>
+      </div>
+
+      <!-- Video Live Section -->
+      <div id="liveSection" class="section">
+        <div id="liveFollowSummary" class="follow-summary-bar">
+          <span>👤 ফলো করা মানুষ: <strong id="followedUsersCount">0</strong></span>
+          <span>👥 ফলো করা গ্রুপ: <strong id="followedGroupsCount">0</strong></span>
+        </div>
+
+        <div class="start-live-box">
+          <div style="font-weight:800; font-size:14px;">🎥 ফ্রি ভিডিও লাইভ শুরু করুন <span class="free-pill">FREE (০ কয়েন)</span></div>
+          <div class="start-live-row">
+            <input id="liveTitleInput" class="input-box" type="text" placeholder="আপনার লাইভের শিরোনাম লিখুন..." />
+            <button id="startLiveBtn" class="btn-live-go">🔴 ফ্রি লাইভ শুরু</button>
+          </div>
+        </div>
+
+        <div id="activeLiveStage" class="live-stage hidden">
+          <div class="live-screen">
+            <div class="live-top-meta">
+              <span><span class="live-badge">LIVE</span><strong id="stageLiveTitle">লাইভ স্ট্রিম</strong><span class="free-pill">FREE</span></span>
+              <span id="stageSlotInfo">👥 ১/৪ জন লাইভে</span>
+            </div>
+
+            <div id="multiLiveGrid" class="multi-live-grid cols-1"></div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+              <div style="font-size:12px; color:#ddd6fe;">হোস্ট: <span id="stageHostName">-</span></div>
+              <button id="stageHostFollowBtn" class="btn-follow">➕ হোস্ট ফলো</button>
+            </div>
+          </div>
+
+          <div class="live-controls">
+            <button id="openAddUserPickerBtn" class="btn-add-user">👤 ইউজার অ্যাড করুন</button>
+            <button id="joinCohostBtn" class="btn-cohost">➕ ফ্রি যুক্ত হোন</button>
+            <button id="liveGiftBtn" class="btn-call btn-gift-open">🎁 গিফট</button>
+            <button id="liveGroupBtn" class="btn-call btn-group-jump">👥 গ্রুপ</button>
+            <button id="leaveLiveBtn" class="btn-small">বের হন</button>
+          </div>
+
+          <div id="addUserPicker" class="add-user-picker hidden">
+            <div style="font-size:12px; font-weight:700; color:#e9d5ff;">আইডি খোলা ইউজারদের মধ্য থেকে ফ্রিতে অ্যাড বা ফলো করুন:</div>
+            <div id="userPickList" style="display:flex; flex-direction:column; gap:6px;"></div>
+          </div>
+
+          <div id="liveCommentsBox" class="live-comments-box"></div>
+
+          <div class="live-comment-row">
+            <input id="liveCommentInput" class="input-box" type="text" placeholder="লাইভে কমেন্ট লিখুন..." />
+            <button id="sendLiveCommentBtn" class="btn-primary" style="width:auto; padding:0 14px;">কমেন্ট</button>
+          </div>
+        </div>
+
+        <div style="font-weight:800; font-size:14px; color:#2b2142;">চলমান ফ্রি ভিডিও লাইভসমূহ (২, ৩ বা ৪জন পর্যন্ত)</div>
+        <div id="liveList" class="live-cards"></div>
+      </div>
+
+      <!-- Chat Section -->
+      <div id="chatSection" class="section hidden">
+        <div class="chat-header">
+          <div>
+            <div id="activeRoomName" class="chat-room-title">ওপেন মেসেঞ্জার রুম</div>
+            <div class="chat-room-sub">আনলিমিটেড মেসেজ • অডিও ও ভিডিও কল</div>
+          </div>
+          <div class="call-actions">
+            <button id="audioCallBtn" class="btn-call btn-audio">📞 অডিও</button>
+            <button id="videoCallBtn" class="btn-call btn-video">🎥 ভিডিও</button>
+            <button id="openGiftBtn" class="btn-call btn-gift-open">🎁 গিফট</button>
+          </div>
+        </div>
+
+        <div class="free-msg-banner">
+          <span id="freeMsgStatus">🎁 ফ্রি মেসেজ বাকি: ৬ / ৬</span>
+          <span style="color:#6d28d9;">ফ্রি শেষ হলে: ১ কয়েন/মেসেজ</span>
+        </div>
+
+        <div id="messagesBox" class="messages-box"></div>
+
+        <div class="chat-input-row">
+          <input id="msgInput" class="input-box" type="text" placeholder="আনলিমিটেড মেসেজ লিখুন..." />
+          <button id="sendMsgBtn" class="btn-primary" style="width:auto; padding:0 18px;">পাঠান</button>
+        </div>
+      </div>
+
+      <!-- Unlimited Groups Section -->
+      <div id="groupsSection" class="section hidden">
+        <div class="create-group-box">
+          <input id="newGroupInput" class="input-box" type="text" placeholder="নিজের পছন্দমতো গ্রুপের নাম লিখুন..." />
+          <button id="createGroupBtn" class="btn-primary" style="width:auto; padding:0 16px;">+ গ্রুপ খুলুন</button>
+        </div>
+        <div id="groupList" class="group-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wallet Modal (Deposit / Withdraw) -->
+  <div id="walletModal" class="overlay center hidden">
+    <div class="modal-card">
+      <div class="sheet-top">
+        <span id="walletModalTitle" class="sheet-title">টাকা ঢোকান</span>
+        <button id="closeWalletBtn" class="btn-close">✕</button>
+      </div>
+      <div id="walletAmountLabel" style="font-size:13px; color:#cbbdf0;">কয়েনের পরিমাণ লিখুন:</div>
+      <input id="walletAmountInput" class="input-box" type="number" min="1" placeholder="যেমন: 100" style="margin-bottom:0;" />
+      <button id="confirmWalletBtn" class="btn-primary">কনফার্ম করুন</button>
+    </div>
+  </div>
+
+  <!-- Settings Modal (Language Selection + Always-English Legal Section) -->
+  <div id="settingsModal" class="overlay center hidden">
+    <div class="modal-card">
+      <div class="sheet-top">
+        <span id="settingsModalTitle" class="sheet-title">⚙️ সেটিং (Language & Legal)</span>
+        <button id="closeSettingsBtn" class="btn-close">✕</button>
+      </div>
+
+      <div>
+        <div id="langSelectLabel" style="font-size:13px; color:#cbbdf0; margin-bottom:6px; font-weight:700;">যেকোনো রাষ্ট্রের ভাষা নির্বাচন করুন:</div>
+        <select id="languageSelect" class="input-box" style="color:#1b1626; background:#fff; margin-bottom:8px;">
+          <option value="bn">বাংলা (Bangladesh)</option>
+          <option value="en">English (United States / UK)</option>
+          <option value="hi">हिन्दी (India)</option>
+          <option value="ar">العربية (Saudi Arabia / UAE)</option>
+          <option value="es">Español (Spain / Mexico)</option>
+          <option value="fr">Français (France / Canada)</option>
+          <option value="ja">日本語 (Japan)</option>
+          <option value="ko">한국어 (South Korea)</option>
+          <option value="de">Deutsch (Germany)</option>
+          <option value="pt">Português (Brazil / Portugal)</option>
+        </select>
+
+        <input id="customLangInput" class="input-box" type="text" placeholder="অন্য কোনো রাষ্ট্রের ভাষা লিখুন (যেমন: Türkçe, Italiano, Bahasa Indonesia)" style="margin-bottom:8px;" />
+        <button id="applyLangBtn" class="btn-primary">ভাষা সেভ করুন</button>
+      </div>
+
+      <!-- Legal Section remains strictly in English regardless of selected language -->
+      <div class="legal-box">
+        <div class="legal-heading">Legal Notice & Terms (English Only)</div>
+        <div>
+          All legal terms, privacy policies, compliance notices, and platform guidelines for Kukie Live are governed in English. Virtual coins, gifts, calls, and live sessions operate under platform terms.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gift Modal -->
+  <div id="giftModal" class="overlay hidden">
+    <div class="gift-sheet">
+      <div class="sheet-top">
+        <span class="sheet-title">🎁 Send Gifts (২০ থেকে ২,০০,০০০ কয়েন)</span>
+        <button id="closeGiftBtn" class="btn-close">✕</button>
+      </div>
+      <div id="giftGrid" class="gift-grid"></div>
+      <div class="sheet-footer">
+        <span id="modalBalanceText" style="font-size:13px; color:#ffd54f; font-weight:700;">Balance: 0</span>
+        <button id="sendGiftBtn" class="btn-send-gift">Send Gift</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Call Modal -->
+  <div id="callModal" class="overlay hidden">
+    <div class="call-modal">
+      <div id="callAvatar" class="call-avatar">🎥</div>
+      <div id="callTitle" style="font-size:18px; font-weight:800;">ভিডিও কল চলছে</div>
+      <div id="callTimer" class="call-status">00:00</div>
+      <div id="callCostInfo" class="call-cost-box">কল শুরু হলে প্রতি ১০ সেকেন্ডে কয়েন কাটা হবে</div>
+      <button id="hangupBtn" class="btn-hangup">কল কাটুন</button>
+    </div>
+  </div>
+
+  <script>
+    const WELCOME_BONUS_COINS = 50;
+    const FREE_INITIAL_MESSAGES = 6;
+    const PAID_MESSAGE_COST = 1;
+    const LIVE_START_COST = 0;
+    const LIVE_JOIN_COST = 0;
+    const MAX_LIVE_COHOSTS = 4;
+    const AUDIO_CALL_COST_PER_TICK = 2;
+    const VIDEO_CALL_COST_PER_TICK = 5;
+
+    const LANGUAGE_PRESETS = {
+      bn: {
+        label: "বাংলা",
+        deposit: "➕ টাকা ঢোকান",
+        withdraw: "💸 উইথড্র",
+        settings: "⚙️ সেটিং",
+        tabLive: "🔴 ভিডিও লাইভ",
+        tabChat: "💬 মেসেজ ও কল",
+        tabGroups: "👥 গ্রুপ"
+      },
+      en: {
+        label: "English",
+        deposit: "➕ Deposit",
+        withdraw: "💸 Withdraw",
+        settings: "⚙️ Settings",
+        tabLive: "🔴 Video Live",
+        tabChat: "💬 Chat & Call",
+        tabGroups: "👥 Groups"
+      },
+      hi: {
+        label: "हिन्दी",
+        deposit: "➕ पैसे जोड़ें",
+        withdraw: "💸 विड्रॉ",
+        settings: "⚙️ सेटिंग",
+        tabLive: "🔴 वीडियो लाइव",
+        tabChat: "💬 चैट और कॉल",
+        tabGroups: "👥 ग्रुप"
+      },
+      ar: {
+        label: "العربية",
+        deposit: "➕ إيداع",
+        withdraw: "💸 سحب",
+        settings: "⚙️ الإعدادات",
+        tabLive: "🔴 بث مباشر",
+        tabChat: "💬 الدردشة والمكالمات",
+        tabGroups: "👥 المجموعات"
+      },
+      es: {
+        label: "Español",
+        deposit: "➕ Depositar",
+        withdraw: "💸 Retirar",
+        settings: "⚙️ Ajustes",
+        tabLive: "🔴 En Vivo",
+        tabChat: "💬 Chat y Llamada",
+        tabGroups: "👥 Grupos"
+      },
+      fr: {
+        label: "Français",
+        deposit: "➕ Dépôt",
+        withdraw: "💸 Retrait",
+        settings: "⚙️ Paramètres",
+        tabLive: "🔴 Direct Vidéo",
+        tabChat: "💬 Chat et Appel",
+        tabGroups: "👥 Groupes"
+      },
+      ja: {
+        label: "日本語",
+        deposit: "➕ 入金",
+        withdraw: "💸 出金",
+        settings: "⚙️ 設定",
+        tabLive: "🔴 ライブ配信",
+        tabChat: "💬 チャット・通話",
+        tabGroups: "👥 グループ"
+      },
+      ko: {
+        label: "한국어",
+        deposit: "➕ 충전",
+        withdraw: "💸 출금",
+        settings: "⚙️ 설정",
+        tabLive: "🔴 라이브",
+        tabChat: "💬 채팅 및 통화",
+        tabGroups: "👥 그룹"
+      },
+      de: {
+        label: "Deutsch",
+        deposit: "➕ Einzahlen",
+        withdraw: "💸 Auszahlen",
+        settings: "⚙️ Einstellungen",
+        tabLive: "🔴 Video-Live",
+        tabChat: "💬 Chat & Anruf",
+        tabGroups: "👥 Gruppen"
+      },
+      pt: {
+        label: "Português",
+        deposit: "➕ Depositar",
+        withdraw: "💸 Sacar",
+        settings: "⚙️ Configurações",
+        tabLive: "🔴 Ao Vivo",
+        tabChat: "💬 Chat e Chamada",
+        tabGroups: "👥 Grupos"
+      }
+    };
+
+    const GIFTS = [
+      { id: "flower", name: "ফুল", emoji: "🌹", price: 20 },
+      { id: "cake", name: "Cake", emoji: "🎂", price: 25 },
+      { id: "fruit", name: "ফল", emoji: "🍓", price: 50 },
+      { id: "lollipop", name: "Lollipop", emoji: "🍭", price: 50 },
+      { id: "perfume", name: "Perfume", emoji: "🧴", price: 100 },
+      { id: "cupid", name: "Cupid", emoji: "💘", price: 199 },
+      { id: "car", name: "গাড়ি", emoji: "🏎️", price: 500 },
+      { id: "horse", name: "ঘোড়া", emoji: "🐎", price: 999 },
+      { id: "crown", name: "Royal Crown", emoji: "👑", price: 2500 },
+      { id: "yacht", name: "Luxury Yacht", emoji: "🛥️", price: 10000 },
+      { id: "jet", name: "Private Jet", emoji: "✈️", price: 50000 },
+      { id: "castle", name: "Golden Castle", emoji: "🏰", price: 100000 },
+      { id: "universe", name: "Kukie Universe", emoji: "🌌", price: 200000 }
+    ];
+
+    const STORAGE_KEYS = {
+      session: "kukie_live_session_v10",
+      users: "kukie_live_users_v10",
+      groups: "kukie_live_groups_v10",
+      messages: "kukie_live_messages_v10",
+      lives: "kukie_live_streams_v10",
+      liveComments: "kukie_live_comments_v10",
+      follows: "kukie_live_follows_v10",
+      lang: "kukie_live_lang_v10"
+    };
+
+    let currentUser = null;
+    let activeRoomId = "global_room";
+    let activeRoomName = "ওপেন মেসেঞ্জার রুম";
+    let activeLiveId = null;
+    let walletMode = "deposit";
+    let giftTargetContext = "chat";
+    let selectedGiftId = GIFTS[0].id;
+    let callInterval = null;
+    let callSeconds = 0;
+
+    function readJson(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch {
+        return fallback;
+      }
+    }
+
+    function writeJson(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function getFollowData() {
+      const data = readJson(STORAGE_KEYS.follows, { users: [], groups: [] });
+      return {
+        users: Array.isArray(data.users) ? data.users : [],
+        groups: Array.isArray(data.groups) ? data.groups : []
+      };
+    }
+
+    function isUserFollowed(userName) {
+      return getFollowData().users.includes(userName);
+    }
+
+    function isGroupFollowed(groupId) {
+      return getFollowData().groups.includes(groupId);
+    }
+
+    function toggleFollowUser(userName) {
+      if (!userName) return;
+      const data = getFollowData();
+      const idx = data.users.indexOf(userName);
+      if (idx === -1) {
+        data.users.push(userName);
+      } else {
+        data.users.splice(idx, 1);
+      }
+      writeJson(STORAGE_KEYS.follows, data);
+      refreshFollowUI();
+    }
+
+    function toggleFollowGroup(groupId) {
+      if (!groupId) return;
+      const data = getFollowData();
+      const idx = data.groups.indexOf(groupId);
+      if (idx === -1) {
+        data.groups.push(groupId);
+      } else {
+        data.groups.splice(idx, 1);
+      }
+      writeJson(STORAGE_KEYS.follows, data);
+      refreshFollowUI();
+    }
+
+    function refreshFollowUI() {
+      const data = getFollowData();
+      document.getElementById("followedUsersCount").textContent = data.users.length;
+      document.getElementById("followedGroupsCount").textContent = data.groups.length;
+
+      renderLives();
+      renderGroups();
+
+      if (activeLiveId) {
+        const lives = readJson(STORAGE_KEYS.lives, []);
+        const found = lives.find((l) => l.id === activeLiveId);
+        if (found) {
+          syncHostFollowButton(found.host);
+          if (!document.getElementById("addUserPicker").classList.contains("hidden")) {
+            renderUserPickerList(found);
+          }
+        }
+      }
+    }
+
+    function syncHostFollowButton(hostName) {
+      const btn = document.getElementById("stageHostFollowBtn");
+      const followed = isUserFollowed(hostName);
+      btn.classList.toggle("following", followed);
+      btn.textContent = followed ? "✅ ফলোয়িং" : "➕ হোস্ট ফলো";
+      btn.onclick = () => toggleFollowUser(hostName);
+    }
+
+    function applyLanguage(langConfig) {
+      const code = langConfig?.code || "bn";
+      const customName = langConfig?.customName || "";
+      document.documentElement.lang = code;
+
+      const preset = LANGUAGE_PRESETS[code] || LANGUAGE_PRESETS.bn;
+      const displayLangLabel = customName ? customName : preset.label;
+
+      document.getElementById("currentLangBadge").textContent = `🌐 ভাষা: ${displayLangLabel}`;
+      document.getElementById("openDepositBtn").textContent = preset.deposit;
+      document.getElementById("openWithdrawBtn").textContent = preset.withdraw;
+      document.getElementById("openSettingsBtn").textContent = preset.settings;
+      document.getElementById("tabLive").textContent = preset.tabLive;
+      document.getElementById("tabChat").textContent = preset.tabChat;
+      document.getElementById("tabGroups").textContent = preset.tabGroups;
+    }
+
+    function initDefaultData() {
+      const users = readJson(STORAGE_KEYS.users, null);
+      if (!users || typeof users !== "object") {
+        writeJson(STORAGE_KEYS.users, {
+          "sadia@gmail.com": { email: "sadia@gmail.com", name: "Sadia", coins: 50, freeMessagesLeft: 6 },
+          "rafi@gmail.com": { email: "rafi@gmail.com", name: "Rafi", coins: 50, freeMessagesLeft: 6 },
+          "mim@gmail.com": { email: "mim@gmail.com", name: "Mim", coins: 50, freeMessagesLeft: 6 }
+        });
+      }
+      const groups = readJson(STORAGE_KEYS.groups, null);
+      if (!groups || !Array.isArray(groups) || groups.length === 0) {
+        writeJson(STORAGE_KEYS.groups, [
+          { id: "global_room", name: "ওপেন মেসেঞ্জার রুম", creator: "System" }
+        ]);
+      }
+      const messages = readJson(STORAGE_KEYS.messages, null);
+      if (!messages || typeof messages !== "object") {
+        writeJson(STORAGE_KEYS.messages, {
+          global_room: [
+            { sender: "Kukie Bot", text: "স্বাগতম! নতুন আইডিতে ৫০ কয়েন ফ্রি ও ৬টি মেসেজ ফ্রিতে দেওয়া হয়েছে।", time: nowTime() }
+          ]
+        });
+      }
+      const lives = readJson(STORAGE_KEYS.lives, null);
+      if (!lives || !Array.isArray(lives) || lives.length === 0) {
+        writeJson(STORAGE_KEYS.lives, [
+          {
+            id: "live_1",
+            title: "ফ্রি ডুয়ো ও ৪জন লাইভ আড্ডা",
+            host: "Kukie Host",
+            participants: [{ name: "Kukie Host", role: "Host", emoji: "🎙️" }]
+          }
+        ]);
+      }
+      const comments = readJson(STORAGE_KEYS.liveComments, null);
+      if (!comments || typeof comments !== "object") {
+        writeJson(STORAGE_KEYS.liveComments, {
+          live_1: [
+            { user: "Kukie Host", text: "ভিডিও লাইভ একদম ফ্রি! নিজেরা লাইভ খুলুন, ইউজার অ্যাড বা ফলো করুন ও গিফট পাঠান।" }
+          ]
+        });
+      }
+    }
+
+    function nowTime() {
+      return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function getUserRecord(email, name) {
+      const users = readJson(STORAGE_KEYS.users, {});
+      const cleanEmail = email.trim().toLowerCase();
+      if (!users[cleanEmail]) {
+        users[cleanEmail] = {
+          email: cleanEmail,
+          name: (name || cleanEmail.split("@")[0]).trim(),
+          coins: WELCOME_BONUS_COINS,
+          freeMessagesLeft: FREE_INITIAL_MESSAGES
+        };
+        writeJson(STORAGE_KEYS.users, users);
+      } else {
+        if (typeof users[cleanEmail].freeMessagesLeft !== "number") {
+          users[cleanEmail].freeMessagesLeft = FREE_INITIAL_MESSAGES;
+        }
+        if (name && name.trim()) {
+          users[cleanEmail].name = name.trim();
+        }
+        writeJson(STORAGE_KEYS.users, users);
+      }
+      return users[cleanEmail];
+    }
+
+    function saveUserRecord() {
+      if (!currentUser) return;
+      const users = readJson(STORAGE_KEYS.users, {});
+      users[currentUser.email] = currentUser;
+      writeJson(STORAGE_KEYS.users, users);
+    }
+
+    function updateCoins(newCoinValue) {
+      if (!currentUser) return;
+      currentUser.coins = Math.max(0, Math.floor(newCoinValue));
+      saveUserRecord();
+      renderBalance();
+    }
+
+    function renderBalance() {
+      const coinVal = currentUser ? currentUser.coins : 0;
+      document.getElementById("coinBalance").textContent = `🪙 ${coinVal.toLocaleString()}`;
+      document.getElementById("modalBalanceText").textContent = `Balance: ${coinVal.toLocaleString()}`;
+    }
+
+    function renderFreeMessageStatus() {
+      const left = currentUser ? Math.max(0, currentUser.freeMessagesLeft) : 0;
+      document.getElementById("freeMsgStatus").textContent = `🎁 ফ্রি মেসেজ বাকি: ${left} / ${FREE_INITIAL_MESSAGES}`;
+    }
+
+    function renderLiveComments() {
+      const box = document.getElementById("liveCommentsBox");
+      if (!activeLiveId) return;
+      const allComments = readJson(STORAGE_KEYS.liveComments, {});
+      const list = allComments[activeLiveId] || [];
+      box.innerHTML = "";
+      list.forEach((c) => {
+        const div = document.createElement("div");
+        div.className = "live-comment-item";
+        div.innerHTML = `<span class="live-comment-user">${escapeHtml(c.user)}:</span><span>${escapeHtml(c.text)}</span>`;
+        box.appendChild(div);
+      });
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function addLiveComment(text) {
+      const trimmed = text.trim();
+      if (!trimmed || !activeLiveId || !currentUser) return;
+      const allComments = readJson(STORAGE_KEYS.liveComments, {});
+      if (!allComments[activeLiveId]) allComments[activeLiveId] = [];
+      allComments[activeLiveId].push({ user: currentUser.name, text: trimmed });
+      writeJson(STORAGE_KEYS.liveComments, allComments);
+      renderLiveComments();
+    }
+
+    function addParticipantToCurrentLive(targetName, roleLabel, emojiChar) {
+      if (!activeLiveId) return;
+      const lives = readJson(STORAGE_KEYS.lives, []);
+      const idx = lives.findIndex((l) => l.id === activeLiveId);
+      if (idx === -1) return;
+
+      const liveObj = lives[idx];
+      liveObj.participants = Array.isArray(liveObj.participants) ? liveObj.participants : [];
+
+      if (liveObj.participants.some((p) => p.name === targetName)) {
+        alert(`${targetName} ইতোমধ্যে এই লাইভ স্ক্রিনে যুক্ত আছেন।`);
+        return;
+      }
+      if (liveObj.participants.length >= MAX_LIVE_COHOSTS) {
+        alert("এই লাইভে সর্বোচ্চ ৪জন একসাথে থাকতে পারেন—স্লট পূর্ণ হয়ে গেছে।");
+        return;
+      }
+
+      if (LIVE_JOIN_COST > 0 && currentUser) {
+        if (currentUser.coins < LIVE_JOIN_COST) {
+          alert("লাইভে যুক্ত হওয়ার জন্য পর্যাপ্ত কয়েন নেই।");
+          return;
+        }
+        updateCoins(currentUser.coins - LIVE_JOIN_COST);
+      }
+
+      liveObj.participants.push({
+        name: targetName,
+        role: roleLabel || `Guest #${liveObj.participants.length}`,
+        emoji: emojiChar || "🌟"
+      });
+      lives[idx] = liveObj;
+      writeJson(STORAGE_KEYS.lives, lives);
+
+      renderLives();
+      renderMultiLiveStage(liveObj);
+      renderUserPickerList(liveObj);
+      addLiveComment(`${targetName} ফ্রিতে লাইভে যুক্ত হয়েছেন (${liveObj.participants.length}/${MAX_LIVE_COHOSTS} জন)`);
+    }
+
+    function renderUserPickerList(liveObj) {
+      const pickList = document.getElementById("userPickList");
+      const usersMap = readJson(STORAGE_KEYS.users, {});
+      const allUsers = Object.values(usersMap);
+      const participants = Array.isArray(liveObj?.participants) ? liveObj.participants : [];
+
+      pickList.innerHTML = "";
+      if (allUsers.length === 0) {
+        pickList.innerHTML = `<div style="font-size:12px; color:#cbbdf0;">কোনো ইউজার পাওয়া যায়নি।</div>`;
+        return;
+      }
+
+      allUsers.forEach((u) => {
+        const alreadyInLive = participants.some((p) => p.name === u.name);
+        const followed = isUserFollowed(u.name);
+        const row = document.createElement("div");
+        row.className = "user-pick-row";
+        row.innerHTML = `
+          <span><strong>${escapeHtml(u.name)}</strong> <span style="color:#cbbdf0;">(${escapeHtml(u.email)})</span></span>
+          <div style="display:flex; gap:5px; align-items:center;">
+            <button class="btn-follow ${followed ? "following" : ""}" style="padding:5px 8px; font-size:11px;">
+              ${followed ? "✅ ফলোয়িং" : "➕ ফলো"}
+            </button>
+            <button class="btn-pick-add" ${alreadyInLive || participants.length >= MAX_LIVE_COHOSTS ? "disabled style='opacity:0.5;'" : ""}>
+              ${alreadyInLive ? "লাইভে আছে" : "+ ফ্রি অ্যাড"}
+            </button>
+          </div>
+        `;
+        row.querySelector(".btn-follow").addEventListener("click", () => toggleFollowUser(u.name));
+        const btn = row.querySelector(".btn-pick-add");
+        if (!alreadyInLive && participants.length < MAX_LIVE_COHOSTS) {
+          btn.addEventListener("click", () => {
+            addParticipantToCurrentLive(u.name, `Added #${participants.length + 1}`, "🌟");
+          });
+        }
+        pickList.appendChild(row);
+      });
+    }
+
+    function renderMultiLiveStage(liveObj) {
+      const participants = Array.isArray(liveObj.participants) && liveObj.participants.length > 0
+        ? liveObj.participants
+        : [{ name: liveObj.host, role: "Host", emoji: "🎙️" }];
+
+      document.getElementById("stageLiveTitle").textContent = liveObj.title;
+      document.getElementById("stageHostName").textContent = liveObj.host;
+      document.getElementById("stageSlotInfo").textContent = `👥 ${participants.length}/${MAX_LIVE_COHOSTS} জন লাইভে`;
+      syncHostFollowButton(liveObj.host);
+
+      const grid = document.getElementById("multiLiveGrid");
+      grid.className = `multi-live-grid cols-${Math.min(Math.max(participants.length, 1), MAX_LIVE_COHOSTS)}`;
+      grid.innerHTML = "";
+
+      participants.forEach((p) => {
+        const followed = isUserFollowed(p.name);
+        const slot = document.createElement("div");
+        slot.className = "live-slot-card";
+        slot.innerHTML = `
+          <div class="live-slot-avatar">${escapeHtml(p.emoji || "🎥")}</div>
+          <div class="live-slot-name">${escapeHtml(p.name)}</div>
+          <div class="live-slot-role">${escapeHtml(p.role || "Live")}</div>
+          <button class="btn-follow ${followed ? "following" : ""}" style="padding:3px 8px; font-size:10px; margin-top:3px;">
+            ${followed ? "✅ ফলোয়িং" : "➕ ফলো"}
+          </button>
+        `;
+        slot.querySelector(".btn-follow").addEventListener("click", () => toggleFollowUser(p.name));
+        grid.appendChild(slot);
+      });
+
+      const joinBtn = document.getElementById("joinCohostBtn");
+      const alreadyJoined = participants.some((p) => p.name === currentUser?.name);
+      if (alreadyJoined) {
+        joinBtn.textContent = "✅ আপনি লাইভে আছেন";
+      } else if (participants.length >= MAX_LIVE_COHOSTS) {
+        joinBtn.textContent = "৪/৪ স্লট পূর্ণ";
+      } else {
+        joinBtn.textContent = "➕ ফ্রি যুক্ত হোন";
+      }
+    }
+
+    function openLiveStage(liveId) {
+      const lives = readJson(STORAGE_KEYS.lives, []);
+      const found = lives.find((l) => l.id === liveId);
+      if (!found) return;
+      activeLiveId = found.id;
+      document.getElementById("activeLiveStage").classList.remove("hidden");
+      document.getElementById("addUserPicker").classList.add("hidden");
+      renderMultiLiveStage(found);
+      renderLiveComments();
+    }
+
+    function renderLives() {
+      const list = document.getElementById("liveList");
+      const lives = readJson(STORAGE_KEYS.lives, []);
+      list.innerHTML = "";
+      lives.forEach((lv) => {
+        const count = Array.isArray(lv.participants) && lv.participants.length > 0 ? lv.participants.length : 1;
+        const followed = isUserFollowed(lv.host);
+        const card = document.createElement("div");
+        card.className = "live-card";
+        card.innerHTML = `
+          <div>
+            <div class="group-title"><span class="live-badge">LIVE</span>${escapeHtml(lv.title)}<span class="free-pill">FREE</span></div>
+            <div class="group-meta">হোস্ট: ${escapeHtml(lv.host)} • 👥 ${count}/${MAX_LIVE_COHOSTS} জন</div>
+          </div>
+          <div class="group-actions">
+            <button class="btn-follow ${followed ? "following" : ""}">${followed ? "✅ ফলোয়িং" : "➕ ফলো"}</button>
+            <button class="btn-join">ফ্রি দেখুন</button>
+          </div>
+        `;
+        card.querySelector(".btn-follow").addEventListener("click", () => toggleFollowUser(lv.host));
+        card.querySelector(".btn-join").addEventListener("click", () => openLiveStage(lv.id));
+        list.appendChild(card);
+      });
+    }
+
+    function renderMessages() {
+      const box = document.getElementById("messagesBox");
+      const allMsgs = readJson(STORAGE_KEYS.messages, {});
+      const roomMsgs = allMsgs[activeRoomId] || [];
+      box.innerHTML = "";
+      roomMsgs.forEach((m) => {
+        const isMine = m.senderEmail === currentUser?.email;
+        const followed = !isMine && isUserFollowed(m.sender);
+        const div = document.createElement("div");
+        div.className = `msg-item ${isMine ? "mine" : ""}`;
+        div.innerHTML = `
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:2px;">
+            <span class="msg-sender">${escapeHtml(m.sender)}</span>
+            ${!isMine ? `<button class="btn-follow ${followed ? "following" : ""}" style="padding:2px 7px; font-size:10px;">${followed ? "✅ ফলোয়িং" : "➕ ফলো"}</button>` : ""}
+          </div>
+          <div class="msg-text">${escapeHtml(m.text)}</div>
+          <div class="msg-time">${escapeHtml(m.time)}</div>
+        `;
+        const followBtn = div.querySelector(".btn-follow");
+        if (followBtn) {
+          followBtn.addEventListener("click", () => toggleFollowUser(m.sender));
+        }
+        box.appendChild(div);
+      });
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function appendMessage(text) {
+      const trimmed = text.trim();
+      if (!trimmed || !currentUser) return false;
+
+      if (currentUser.freeMessagesLeft > 0) {
+        currentUser.freeMessagesLeft -= 1;
+        saveUserRecord();
+        renderFreeMessageStatus();
+      } else {
+        if (currentUser.coins < PAID_MESSAGE_COST) {
+          alert(`আপনার ৬টি ফ্রি মেসেজ শেষ হয়ে গেছে এবং কয়েনও নেই। মেসেজ পাঠাতে কমপক্ষে ${PAID_MESSAGE_COST} কয়েন লাগবে।`);
+          return false;
+        }
+        updateCoins(currentUser.coins - PAID_MESSAGE_COST);
+      }
+
+      const allMsgs = readJson(STORAGE_KEYS.messages, {});
+      if (!allMsgs[activeRoomId]) allMsgs[activeRoomId] = [];
+      allMsgs[activeRoomId].push({
+        sender: currentUser.name,
+        senderEmail: currentUser.email,
+        text: trimmed,
+        time: nowTime()
+      });
+      writeJson(STORAGE_KEYS.messages, allMsgs);
+      renderMessages();
+      return true;
+    }
+
+    function appendGiftMessage(text) {
+      if (!currentUser) return;
+      const allMsgs = readJson(STORAGE_KEYS.messages, {});
+      if (!allMsgs[activeRoomId]) allMsgs[activeRoomId] = [];
+      allMsgs[activeRoomId].push({
+        sender: currentUser.name,
+        senderEmail: currentUser.email,
+        text,
+        time: nowTime()
+      });
+      writeJson(STORAGE_KEYS.messages, allMsgs);
+      renderMessages();
+    }
+
+    function renderGroups() {
+      const list = document.getElementById("groupList");
+      const groups = readJson(STORAGE_KEYS.groups, []);
+      list.innerHTML = "";
+      groups.forEach((g) => {
+        const followed = isGroupFollowed(g.id);
+        const card = document.createElement("div");
+        card.className = "group-card";
+        card.innerHTML = `
+          <div>
+            <div class="group-title">${escapeHtml(g.name)}</div>
+            <div class="group-meta">খুলেছেন: ${escapeHtml(g.creator)}</div>
+          </div>
+          <div class="group-actions">
+            <button class="btn-follow ${followed ? "following" : ""}">${followed ? "✅ ফলোয়িং" : "➕ ফলো"}</button>
+            <button class="btn-join">ঢুকুন</button>
+          </div>
+        `;
+        card.querySelector(".btn-follow").addEventListener("click", () => toggleFollowGroup(g.id));
+        card.querySelector(".btn-join").addEventListener("click", () => {
+          activeRoomId = g.id;
+          activeRoomName = g.name;
+          document.getElementById("activeRoomName").textContent = activeRoomName;
+          switchTab("chat");
+          renderMessages();
+        });
+        list.appendChild(card);
+      });
+    }
+
+    function renderGifts() {
+      const grid = document.getElementById("giftGrid");
+      grid.innerHTML = "";
+      GIFTS.forEach((g) => {
+        const card = document.createElement("div");
+        card.className = `gift-card ${g.id === selectedGiftId ? "selected" : ""}`;
+        card.innerHTML = `
+          <div class="gift-emoji">${g.emoji}</div>
+          <div class="gift-name">${escapeHtml(g.name)}</div>
+          <div class="gift-price">🪙 ${g.price.toLocaleString()}</div>
+        `;
+        card.addEventListener("click", () => {
+          selectedGiftId = g.id;
+          renderGifts();
+        });
+        grid.appendChild(card);
+      });
+      renderBalance();
+    }
+
+    function openGiftModal(context) {
+      giftTargetContext = context;
+      renderGifts();
+      document.getElementById("giftModal").classList.remove("hidden");
+    }
+
+    function openWalletModal(mode) {
+      walletMode = mode;
+      document.getElementById("walletAmountInput").value = "";
+      document.getElementById("walletModalTitle").textContent = mode === "deposit" ? "➕ টাকা ঢোকান (Deposit Coins)" : "💸 উইথড্র (Withdraw Coins)";
+      document.getElementById("walletAmountLabel").textContent = mode === "deposit" ? "কত কয়েন ঢোকাতে চান লিখুন:" : "কত কয়েন উইথড্র করতে চান লিখুন:";
+      document.getElementById("walletModal").classList.remove("hidden");
+    }
+
+    function startCall(type) {
+      if (!currentUser) return;
+      const costPerTick = type === "video" ? VIDEO_CALL_COST_PER_TICK : AUDIO_CALL_COST_PER_TICK;
+      if (currentUser.coins < costPerTick) {
+        alert(`কল করার জন্য পর্যাপ্ত কয়েন নেই! কমপক্ষে ${costPerTick} কয়েন লাগবে।`);
+        return;
+      }
+
+      updateCoins(currentUser.coins - costPerTick);
+      callSeconds = 0;
+
+      document.getElementById("callAvatar").textContent = type === "video" ? "🎥" : "📞";
+      document.getElementById("callTitle").textContent = type === "video" ? "ভিডিও কল চলছে" : "অডিও কল চলছে";
+      document.getElementById("callTimer").textContent = "00:00";
+      document.getElementById("callCostInfo").textContent = `প্রতি ১০ সেকেন্ডে ${costPerTick} কয়েন কাটছে`;
+      document.getElementById("callModal").classList.remove("hidden");
+
+      clearInterval(callInterval);
+      callInterval = setInterval(() => {
+        callSeconds += 1;
+        const mins = String(Math.floor(callSeconds / 60)).padStart(2, "0");
+        const secs = String(callSeconds % 60).padStart(2, "0");
+        document.getElementById("callTimer").textContent = `${mins}:${secs}`;
+
+        if (callSeconds % 10 === 0) {
+          if (currentUser.coins >= costPerTick) {
+            updateCoins(currentUser.coins - costPerTick);
+          } else {
+            stopCall();
+            alert("আপনার কয়েন শেষ হয়ে যাওয়ায় কলটি কেটে গেছে।");
+          }
+        }
+      }, 1000);
+    }
+
+    function stopCall() {
+      clearInterval(callInterval);
+      callInterval = null;
+      document.getElementById("callModal").classList.add("hidden");
+    }
+
+    function switchTab(tab) {
+      document.getElementById("tabLive").classList.toggle("active", tab === "live");
+      document.getElementById("tabChat").classList.toggle("active", tab === "chat");
+      document.getElementById("tabGroups").classList.toggle("active", tab === "groups");
+
+      document.getElementById("liveSection").classList.toggle("hidden", tab !== "live");
+      document.getElementById("chatSection").classList.toggle("hidden", tab !== "chat");
+      document.getElementById("groupsSection").classList.toggle("hidden", tab !== "groups");
+    }
+
+    function enterApp(user) {
+      currentUser = user;
+      writeJson(STORAGE_KEYS.session, { email: user.email, name: user.name });
+      document.getElementById("loginView").classList.add("hidden");
+      document.getElementById("appView").classList.remove("hidden");
+      document.getElementById("displayUserName").textContent = user.name;
+      document.getElementById("displayUserEmail").textContent = user.email;
+      renderBalance();
+      renderFreeMessageStatus();
+      refreshFollowUI();
+      renderMessages();
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[c]));
+    }
+
+    // Event Listeners
+    document.getElementById("loginBtn").addEventListener("click", () => {
+      const email = document.getElementById("emailInput").value.trim();
+      const name = document.getElementById("nameInput").value.trim();
+      if (!email || !email.includes("@")) {
+        alert("দয়া করে একটি সঠিক Gmail ঠিকানা লিখুন।");
+        return;
+      }
+      const user = getUserRecord(email, name);
+      enterApp(user);
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      stopCall();
+      localStorage.removeItem(STORAGE_KEYS.session);
+      currentUser = null;
+      document.getElementById("appView").classList.add("hidden");
+      document.getElementById("loginView").classList.remove("hidden");
+    });
+
+    document.getElementById("openDepositBtn").addEventListener("click", () => openWalletModal("deposit"));
+    document.getElementById("openWithdrawBtn").addEventListener("click", () => openWalletModal("withdraw"));
+    document.getElementById("closeWalletBtn").addEventListener("click", () => {
+      document.getElementById("walletModal").classList.add("hidden");
+    });
+
+    document.getElementById("confirmWalletBtn").addEventListener("click", () => {
+      if (!currentUser) return;
+      const amt = Number(document.getElementById("walletAmountInput").value);
+      if (!Number.isFinite(amt) || amt <= 0) {
+        alert("দয়া করে সঠিক পরিমাণ কয়েন লিখুন।");
+        return;
+      }
+      if (walletMode === "deposit") {
+        updateCoins(currentUser.coins + amt);
+        alert(`${amt.toLocaleString()} কয়েন সফলভাবে যুক্ত হয়েছে।`);
+      } else {
+        if (currentUser.coins < amt) {
+          alert("উইথড্র করার মতো যথেষ্ট কয়েন ব্যালেন্সে নেই।");
+          return;
+        }
+        updateCoins(currentUser.coins - amt);
+        alert(`${amt.toLocaleString()} কয়েনের উইথড্র রিকোয়েস্ট সম্পন্ন হয়েছে।`);
+      }
+      document.getElementById("walletModal").classList.add("hidden");
+    });
+
+    document.getElementById("openSettingsBtn").addEventListener("click", () => {
+      const savedLang = readJson(STORAGE_KEYS.lang, { code: "bn", customName: "" });
+      document.getElementById("languageSelect").value = savedLang.code || "bn";
+      document.getElementById("customLangInput").value = savedLang.customName || "";
+      document.getElementById("settingsModal").classList.remove("hidden");
+    });
+
+    document.getElementById("closeSettingsBtn").addEventListener("click", () => {
+      document.getElementById("settingsModal").classList.add("hidden");
+    });
+
+    document.getElementById("applyLangBtn").addEventListener("click", () => {
+      const code = document.getElementById("languageSelect").value || "bn";
+      const customName = document.getElementById("customLangInput").value.trim();
+      const langObj = { code, customName };
+      writeJson(STORAGE_KEYS.lang, langObj);
+      applyLanguage(langObj);
+      document.getElementById("settingsModal").classList.add("hidden");
+    });
+
+    document.getElementById("tabLive").addEventListener("click", () => switchTab("live"));
+    document.getElementById("tabChat").addEventListener("click", () => switchTab("chat"));
+    document.getElementById("tabGroups").addEventListener("click", () => switchTab("groups"));
+
+    document.getElementById("startLiveBtn").addEventListener("click", () => {
+      const input = document.getElementById("liveTitleInput");
+      const title = input.value.trim();
+      if (!title || !currentUser) return;
+
+      if (LIVE_START_COST > 0) {
+        if (currentUser.coins < LIVE_START_COST) {
+          alert("লাইভ শুরু করার জন্য পর্যাপ্ত কয়েন নেই।");
+          return;
+        }
+        updateCoins(currentUser.coins - LIVE_START_COST);
+      }
+
+      const lives = readJson(STORAGE_KEYS.lives, []);
+      const newLive = {
+        id: "live_" + Date.now(),
+        title,
+        host: currentUser.name,
+        participants: [{ name: currentUser.name, role: "Host", emoji: "🎙️" }]
+      };
+      lives.unshift(newLive);
+      writeJson(STORAGE_KEYS.lives, lives);
+      input.value = "";
+      renderLives();
+      openLiveStage(newLive.id);
+    });
+
+    document.getElementById("openAddUserPickerBtn").addEventListener("click", () => {
+      if (!activeLiveId) return;
+      const picker = document.getElementById("addUserPicker");
+      picker.classList.toggle("hidden");
+      if (!picker.classList.contains("hidden")) {
+        const lives = readJson(STORAGE_KEYS.lives, []);
+        const found = lives.find((l) => l.id === activeLiveId);
+        renderUserPickerList(found);
+      }
+    });
+
+    document.getElementById("joinCohostBtn").addEventListener("click", () => {
+      if (!currentUser) return;
+      addParticipantToCurrentLive(currentUser.name, "Co-Host", "🌟");
+    });
+
+    document.getElementById("leaveLiveBtn").addEventListener("click", () => {
+      activeLiveId = null;
+      document.getElementById("addUserPicker").classList.add("hidden");
+      document.getElementById("activeLiveStage").classList.add("hidden");
+    });
+
+    document.getElementById("liveGiftBtn").addEventListener("click", () => openGiftModal("live"));
+    document.getElementById("liveGroupBtn").addEventListener("click", () => switchTab("groups"));
+
+    document.getElementById("sendLiveCommentBtn").addEventListener("click", () => {
+      const input = document.getElementById("liveCommentInput");
+      addLiveComment(input.value);
+      input.value = "";
+    });
+
+    document.getElementById("liveCommentInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        addLiveComment(e.target.value);
+        e.target.value = "";
+      }
+    });
+
+    document.getElementById("createGroupBtn").addEventListener("click", () => {
+      const input = document.getElementById("newGroupInput");
+      const groupName = input.value.trim();
+      if (!groupName || !currentUser) return;
+      const groups = readJson(STORAGE_KEYS.groups, []);
+      groups.unshift({
+        id: "grp_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+        name: groupName,
+        creator: currentUser.name
+      });
+      writeJson(STORAGE_KEYS.groups, groups);
+      input.value = "";
+      renderGroups();
+    });
+
+    document.getElementById("sendMsgBtn").addEventListener("click", () => {
+      const input = document.getElementById("msgInput");
+      if (appendMessage(input.value)) {
+        input.value = "";
+      }
+    });
+
+    document.getElementById("msgInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        if (appendMessage(e.target.value)) {
+          e.target.value = "";
+        }
+      }
+    });
+
+    document.getElementById("openGiftBtn").addEventListener("click", () => openGiftModal("chat"));
+
+    document.getElementById("closeGiftBtn").addEventListener("click", () => {
+      document.getElementById("giftModal").classList.add("hidden");
+    });
+
+    document.getElementById("sendGiftBtn").addEventListener("click", () => {
+      const gift = GIFTS.find((g) => g.id === selectedGiftId) || GIFTS[0];
+      if (!currentUser) return;
+      if (currentUser.coins < gift.price) {
+        alert(`এই গিফট পাঠানোর জন্য পর্যাপ্ত কয়েন নেই (${gift.price.toLocaleString()} কয়েন প্রয়োজন)।`);
+        return;
+      }
+      updateCoins(currentUser.coins - gift.price);
+      const giftText = `${gift.emoji} ${gift.name} গিফট পাঠিয়েছেন (${gift.price.toLocaleString()} কয়েন)`;
+
+      if (giftTargetContext === "live" && activeLiveId) {
+        addLiveComment(giftText);
+      } else {
+        appendGiftMessage(giftText);
+      }
+      document.getElementById("giftModal").classList.add("hidden");
+    });
+
+    document.getElementById("audioCallBtn").addEventListener("click", () => startCall("audio"));
+    document.getElementById("videoCallBtn").addEventListener("click", () => startCall("video"));
+    document.getElementById("hangupBtn").addEventListener("click", stopCall);
+
+    // Boot
+    initDefaultData();
+    applyLanguage(readJson(STORAGE_KEYS.lang, { code: "bn", customName: "" }));
+    const savedSession = readJson(STORAGE_KEYS.session, null);
+    if (savedSession?.email) {
+      enterApp(getUserRecord(savedSession.email, savedSession.name));
+    }
+  </script>
+</body>
+</html>
