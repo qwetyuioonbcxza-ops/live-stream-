@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ChaloJi: Video Chat & Joy Chat</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body {
+      background: #ffffff; color: #111827;
+      min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 20px 14px;
+    }
+
+    /* Top Subtle Coin Bar (Doesn't crowd the card) */
+    .top-bar {
+      position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+      width: calc(100% - 24px); max-width: 390px;
+      display: flex; justify-content: space-between; align-items: center; gap: 6px; z-index: 20;
+    }
+    .coin-pill {
+      background: #f1f5f9; color: #0f172a; font-size: 12px; font-weight: 700;
+      padding: 6px 11px; border-radius: 999px; border: 1px solid #e2e8f0; cursor: pointer;
+    }
+    .mini-btns { display: flex; gap: 5px; }
+    .mini-btn {
+      background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3;
+      font-size: 11px; font-weight: 700; padding: 6px 9px; border-radius: 999px; cursor: pointer;
+    }
+
+    /* Exact Screenshot Card Layout */
+    .card-wrap {
+      width: 100%; max-width: 240px;
+      display: flex; flex-direction: column; align-items: flex-start;
+    }
+    .live-box {
+      position: relative; width: 210px; height: 210px; border-radius: 44px;
+      overflow: hidden; background: #e5e7eb; align-self: center;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+    }
+    .live-box img, .live-box video {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    #camView { display: none; transform: scaleX(-1); }
+
+    /* Top-right LIVE badge */
+    .live-badge {
+      position: absolute; top: 12px; right: 12px;
+      background: rgba(31, 41, 55, 0.72); color: #ffffff;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+      padding: 4px 9px; border-radius: 999px;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .red-dot { width: 7px; height: 7px; border-radius: 50%; background: #ef4444; }
+
+    /* Bottom 3 Icons inside Card */
+    .card-controls {
+      position: absolute; bottom: 14px; left: 0; right: 0;
+      display: flex; justify-content: center; align-items: center; gap: 14px;
+    }
+    .icon-circle {
+      position: relative; width: 42px; height: 42px; border-radius: 50%; border: none;
+      background: rgba(255, 255, 255, 0.34); backdrop-filter: blur(6px);
+      color: #ffffff; font-size: 17px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+    .icon-circle.muted::after {
+      content: ""; position: absolute; width: 26px; height: 2px; background: #ffffff;
+      transform: rotate(-45deg); border-radius: 2px;
+    }
+    .pink-cam {
+      width: 54px; height: 54px; border-radius: 50%; border: none;
+      background: #ff2e63; color: #ffffff; font-size: 21px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 16px rgba(255, 46, 99, 0.4); cursor: pointer;
+    }
+    .pink-cam.active { background: #10b981; }
+
+    /* Title & Rating Pill matching Screenshot */
+    .title-text {
+      margin-top: 12px; font-size: 21px; line-height: 1.25; font-weight: 600; color: #111827;
+    }
+    .rating-badge {
+      margin-top: 8px; background: #e0f2fe; color: #0369a1;
+      font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 8px;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+
+    /* Compact Feature Trigger Row below Rating */
+    .quick-strip {
+      margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; width: 100%;
+    }
+    .q-btn {
+      background: #f8fafc; border: 1px solid #e2e8f0; color: #1e293b;
+      font-size: 11px; font-weight: 700; padding: 6px 9px; border-radius: 9px; cursor: pointer;
+    }
+
+    .status-note {
+      margin-top: 8px; font-size: 11px; font-weight: 600; color: #059669; min-height: 16px;
+    }
+
+    /* Drawer / Modal for Features */
+    .drawer-bg {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); z-index: 40;
+      display: none; align-items: flex-end; justify-content: center;
+    }
+    .drawer-bg.open { display: flex; }
+    .drawer {
+      width: 100%; max-width: 430px; background: #ffffff; color: #111827;
+      border-radius: 22px 22px 0 0; padding: 16px 16px 24px; max-height: 82vh; overflow-y: auto;
+    }
+    .drawer-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .close-x { background: #f1f5f9; border: none; width: 28px; height: 28px; border-radius: 50%; font-weight: 700; cursor: pointer; }
+    .num-box {
+      background: #fff1f2; border: 1px dashed #fb7185; border-radius: 10px;
+      padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; margin: 8px 0;
+    }
+    .copy-b { background: #ff2e63; color: #fff; border: none; padding: 6px 11px; border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    label { display: block; font-size: 12px; font-weight: 600; color: #334155; margin: 9px 0 4px; }
+    input, select {
+      width: 100%; padding: 9px 11px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 13px;
+    }
+    .sub-btn {
+      width: 100%; margin-top: 11px; padding: 10px; border: none; border-radius: 10px;
+      background: #111827; color: #fff; font-size: 13px; font-weight: 700; cursor: pointer;
+    }
+    .chat-box { max-height: 140px; overflow-y: auto; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px; margin-bottom: 8px; font-size: 12px; }
+    .chat-line { margin-bottom: 5px; }
+    .list-item { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 10px; border-radius: 9px; margin-top: 7px; font-size: 12px; }
+    .log-item { font-size: 11px; color: #475569; padding: 5px 0; border-bottom: 1px dashed #e2e8f0; }
+  </style>
+</head>
+<body>
+  <!-- Minimal Top Wallet Bar -->
+  <div class="top-bar">
+    <div class="coin-pill" onclick="openDrawer('topupDrawer')">🪙 <span id="coins">500</span> কয়েন</div>
+    <div class="mini-btns">
+      <button class="mini-btn" onclick="openDrawer('topupDrawer')">+ টপ-আপ</button>
+      <button class="mini-btn" onclick="openDrawer('withdrawDrawer')">উইথড্র</button>
+    </div>
+  </div>
+
+  <!-- Exact Screenshot Card -->
+  <div class="card-wrap">
+    <div class="live-box">
+      <img id="cardImg" src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&q=85" alt="Live Host" />
+      <video id="camView" autoplay playsinline muted></video>
+      <div class="live-badge"><span class="red-dot"></span> LIVE</div>
+
+      <div class="card-controls">
+        <button id="micBtn" class="icon-circle muted" onclick="toggleMic()" title="Mic">🎤</button>
+        <button id="vidBtn" class="pink-cam" onclick="toggleCallOrCam()" title="Video">📹</button>
+        <button id="spkBtn" class="icon-circle" onclick="toggleSpk()" title="Speaker">🔊</button>
+      </div>
+    </div>
+
+    <div class="title-text" id="appTitle">ChaloJi: Video Chat &amp; Joy Chat</div>
+    <div class="rating-badge" id="ratingPill">4.4 ★</div>
+
+    <div class="quick-strip">
+      <button class="q-btn" onclick="nextCard()">পরের ম্যাচ</button>
+      <button class="q-btn" onclick="openDrawer('chatDrawer')">চ্যাট / গিফট</button>
+      <button class="q-btn" onclick="openDrawer('groupDrawer')">ফ্রি গ্রুপ</button>
+      <button class="q-btn" onclick="blockHost()">ব্লক / রিপোর্ট</button>
+    </div>
+
+    <div id="statusNote" class="status-note"></div>
+  </div>
+
+  <!-- 1. Top-Up Drawer (Nagad 01401912576 & bKash 01617520997) -->
+  <div id="topupDrawer" class="drawer-bg" onclick="bgClose(event, 'topupDrawer')">
+    <div class="drawer">
+      <div class="drawer-top">
+        <strong>🪙 ১:১ কয়েন টপ-আপ</strong>
+        <button class="close-x" onclick="closeDrawer('topupDrawer')">✕</button>
+      </div>
+
+      <label>পেমেন্ট মেথড</label>
+      <select id="payMethod" onchange="updateNum()">
+        <option value="Nagad">নগদ (Nagad)</option>
+        <option value="bKash">বিকাশ (bKash)</option>
+      </select>
+
+      <div class="num-box">
+        <div>
+          <div style="font-size:11px; color:#9f1239;">এই <span id="payLabel">নগদ</span> নম্বরে Send Money করুন:</div>
+          <strong id="payNum" style="font-size:15px; color:#881337;">01401912576</strong>
+        </div>
+        <button type="button" class="copy-b" onclick="copyNum()">কপি</button>
+      </div>
+
+      <label>টাকার পরিমাণ (১ টাকা = ১ কয়েন)</label>
+      <input id="topAmt" type="number" placeholder="যেমন: 200" />
+      <label>ট্রানজেকশন ID</label>
+      <input id="topTrx" type="text" placeholder="যেমন: TRX123456" />
+      <button class="sub-btn" onclick="addCoinsTopup()">কয়েন যোগ করুন</button>
+
+      <div style="margin-top:12px;">
+        <strong style="font-size:12px;">লেনদেন হিস্ট্রি</strong>
+        <div id="txList"><div class="log-item">• শুরুতে ৫০০ কয়েন ব্যালেন্স দেওয়া হয়েছে।</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Withdraw Drawer (20% Commission) -->
+  <div id="withdrawDrawer" class="drawer-bg" onclick="bgClose(event, 'withdrawDrawer')">
+    <div class="drawer">
+      <div class="drawer-top">
+        <strong>💸 উইথড্র (২০% কমিশন)</strong>
+        <button class="close-x" onclick="closeDrawer('withdrawDrawer')">✕</button>
+      </div>
+      <label>উইথড্র কয়েন</label>
+      <input id="wdAmt" type="number" placeholder="যেমন: 200" oninput="calcWd()" />
+      <label>রিসিভ নম্বর (নগদ / বিকাশ)</label>
+      <input id="wdNum" type="text" placeholder="01XXXXXXXXX" />
+      <div id="wdCalc" style="margin-top:8px; font-size:12px; font-weight:700; color:#be123c;">কমিশন (২০%): ৳0 | আপনি পাবেন: ৳0</div>
+      <button class="sub-btn" onclick="sendWd()">উইথড্র রিকোয়েস্ট পাঠান</button>
+    </div>
+  </div>
+
+  <!-- 3. Chat & Gifts Drawer -->
+  <div id="chatDrawer" class="drawer-bg" onclick="bgClose(event, 'chatDrawer')">
+    <div class="drawer">
+      <div class="drawer-top">
+        <strong>💬 লাইভ চ্যাট ও গিফট</strong>
+        <button class="close-x" onclick="closeDrawer('chatDrawer')">✕</button>
+      </div>
+      <div style="display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+        <button class="q-btn" onclick="gift('🌹 গোলাপ', 20)">🌹 ২০</button>
+        <button class="q-btn" onclick="gift('💖 হার্ট', 50)">💖 ৫০</button>
+        <button class="q-btn" onclick="gift('👑 মুকুট', 100)">👑 ১০০</button>
+      </div>
+      <div id="chatBox" class="chat-box">
+        <div class="chat-line"><strong>Host:</strong> হাই! কথা বলুন।</div>
+      </div>
+      <form style="display:flex; gap:6px;" onsubmit="sendMsg(event)">
+        <input id="msgInp" placeholder="মেসেজ লিখুন (-৫ কয়েন)..." />
+        <button class="copy-b" type="submit">পাঠান</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Free Groups Drawer -->
+  <div id="groupDrawer" class="drawer-bg" onclick="bgClose(event, 'groupDrawer')">
+    <div class="drawer">
+      <div class="drawer-top">
+        <strong>👥 ফ্রি গ্রুপ তৈরি</strong>
+        <button class="close-x" onclick="closeDrawer('groupDrawer')">✕</button>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <input id="grpInp" placeholder="নতুন গ্রুপের নাম..." />
+        <button class="copy-b" onclick="addGroup()">তৈরি</button>
+      </div>
+      <div id="grpBox"></div>
+    </div>
+  </div>
+
+  <script>
+    const ADMIN_NUMS = {
+      Nagad: "01401912576",
+      bKash: "01617520997"
+    };
+
+    const PROFILES = [
+      { rating: "4.4 ★", img: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&q=85" },
+      { rating: "4.6 ★", img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&q=85" },
+      { rating: "4.5 ★", img: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&q=85" }
+    ];
+
+    let coins = 500;
+    let pIdx = 0;
+    let micMuted = true;
+    let spkMuted = false;
+    let callActive = false;
+    let callTimer = null;
+    let stream = null;
+    let groups = ["ফ্রেন্ডস লাইভ গ্রুপ", "আড্ডা জোন"];
+
+    function setNote(txt) {
+      document.getElementById("statusNote").innerText = txt;
+    }
+
+    function syncCoins() {
+      document.getElementById("coins").innerText = coins;
+    }
+
+    function addTx(txt) {
+      const box = document.getElementById("txList");
+      const d = document.createElement("div");
+      d.className = "log-item";
+      d.innerText = "• " + txt;
+      box.prepend(d);
+    }
+
+    function toggleMic() {
+      micMuted = !micMuted;
+      document.getElementById("micBtn").classList.toggle("muted", micMuted);
+      setNote(micMuted ? "মাইক মিউট করা হয়েছে" : "মাইক চালু হয়েছে");
+    }
+
+    function toggleSpk() {
+      spkMuted = !spkMuted;
+      document.getElementById("spkBtn").classList.toggle("muted", spkMuted);
+      setNote(spkMuted ? "স্পিকার মিউট করা হয়েছে" : "স্পিকার চালু হয়েছে");
+    }
+
+    async function toggleCallOrCam() {
+      const btn = document.getElementById("vidBtn");
+      const vid = document.getElementById("camView");
+      const img = document.getElementById("cardImg");
+
+      if (callActive) {
+        clearInterval(callTimer);
+        callActive = false;
+        btn.classList.remove("active");
+        if (stream) {
+          stream.getTracks().forEach(t => t.stop());
+          stream = null;
+          vid.style.display = "none";
+          img.style.display = "block";
+        }
+        setNote("কল বন্ধ করা হয়েছে");
+        return;
+      }
+
+      if (coins < 50) {
+        setNote("কলের জন্য ৫০ কয়েন প্রয়োজন!");
+        openDrawer("topupDrawer");
+        return;
+      }
+
+      coins -= 50;
+      syncCoins();
+      addTx("ভিডিও কল শুরু (-৫০ কয়েন)");
+      callActive = true;
+      btn.classList.add("active");
+      setNote("ভিডিও কল চালু হয়েছে (৫০ কয়েন/মি.)");
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        vid.srcObject = stream;
+        img.style.display = "none";
+        vid.style.display = "block";
+      } catch (e) {
+        // ক্যামেরা না পেলে কার্ড ভিউতেই কল সিমুলেশন চলবে
+      }
+
+      let secs = 0;
+      callTimer = setInterval(() => {
+        secs++;
+        if (secs % 60 === 0) {
+          if (coins < 50) {
+            toggleCallOrCam();
+            setNote("কয়েন শেষ হওয়ায় কল কেটে গেছে");
+          } else {
+            coins -= 50;
+            syncCoins();
+            addTx("কল রিনিউ (-৫০ কয়েন)");
+          }
+        }
+      }, 1000);
+    }
+
+    function nextCard() {
+      if (callActive) toggleCallOrCam();
+      pIdx = (pIdx + 1) % PROFILES.length;
+      document.getElementById("cardImg").src = PROFILES[pIdx].img;
+      document.getElementById("ratingPill").innerText = PROFILES[pIdx].rating;
+      setNote("পরের লাইভ কার্ড লোড হয়েছে");
+    }
+
+    function blockHost() {
+      setNote("ব্লক ও রিপোর্ট করা হয়েছে");
+      nextCard();
+    }
+
+    function openDrawer(id) {
+      document.getElementById(id).classList.add("open");
+      if (id === "groupDrawer") drawGroups();
+    }
+    function closeDrawer(id) {
+      document.getElementById(id).classList.remove("open");
+    }
+    function bgClose(e, id) {
+      if (e.target.id === id) closeDrawer(id);
+    }
+
+    function updateNum() {
+      const m = document.getElementById("payMethod").value;
+      document.getElementById("payLabel").innerText = m === "Nagad" ? "নগদ" : "বিকাশ";
+      document.getElementById("payNum").innerText = ADMIN_NUMS[m];
+    }
+
+    function copyNum() {
+      const num = document.getElementById("payNum").innerText;
+      navigator.clipboard?.writeText(num);
+      setNote(`নম্বর কপি হয়েছে: ${num}`);
+    }
+
+    function addCoinsTopup() {
+      const amt = parseInt(document.getElementById("topAmt").value, 10);
+      const trx = document.getElementById("topTrx").value.trim();
+      const m = document.getElementById("payMethod").value;
+      if (!amt || amt <= 0 || !trx) {
+        setNote("সঠিক টাকা ও TrxID দিন");
+        return;
+      }
+      coins += amt;
+      syncCoins();
+      addTx(`${m} টপ-আপ +${amt} কয়েন (TrxID: ${trx})`);
+      document.getElementById("topAmt").value = "";
+      document.getElementById("topTrx").value = "";
+      closeDrawer("topupDrawer");
+      setNote(`${amt} কয়েন যুক্ত হয়েছে`);
+    }
+
+    function calcWd() {
+      const c = parseFloat(document.getElementById("wdAmt").value) || 0;
+      const fee = Math.round(c * 0.20);
+      const net = c - fee;
+      document.getElementById("wdCalc").innerText = `কমিশন (২০%): ৳${fee} | আপনি পাবেন: ৳${net}`;
+    }
+
+    function sendWd() {
+      const c = parseInt(document.getElementById("wdAmt").value, 10);
+      const num = document.getElementById("wdNum").value.trim();
+      if (!c || c <= 0 || !num) {
+        setNote("কয়েন ও রিসিভ নম্বর লিখুন");
+        return;
+      }
+      if (c > coins) {
+        setNote("পর্যাপ্ত কয়েন নেই");
+        return;
+      }
+      const fee = Math.round(c * 0.20);
+      const net = c - fee;
+      coins -= c;
+      syncCoins();
+      addTx(`উইথড্র ${c} কয়েন → ৳${net} (২০% কমিশন ৳${fee})`);
+      document.getElementById("wdAmt").value = "";
+      calcWd();
+      closeDrawer("withdrawDrawer");
+      setNote(`উইথড্র জমা হয়েছে! পাবেন ৳${net}`);
+    }
+
+    function sendMsg(e) {
+      e.preventDefault();
+      const inp = document.getElementById("msgInp");
+      const txt = inp.value.trim();
+      if (!txt) return;
+      if (coins < 5) {
+        setNote("মেসেজের জন্য ৫ কয়েন লাগবে");
+        return;
+      }
+      coins -= 5;
+      syncCoins();
+      const box = document.getElementById("chatBox");
+      box.innerHTML += `<div class="chat-line"><strong>আপনি:</strong> ${txt}</div>`;
+      box.scrollTop = box.scrollHeight;
+      inp.value = "";
+    }
+
+    function gift(name, cost) {
+      if (coins < cost) {
+        setNote("গিফটের জন্য পর্যাপ্ত কয়েন নেই");
+        return;
+      }
+      coins -= cost;
+      syncCoins();
+      addTx(`গিফট ${name} (-${cost} কয়েন)`);
+      document.getElementById("chatBox").innerHTML += `<div class="chat-line">🎁 <strong>আপনি:</strong> ${name}</div>`;
+      setNote(`${name} পাঠানো হয়েছে`);
+    }
+
+    function drawGroups() {
+      const box = document.getElementById("grpBox");
+      box.innerHTML = "";
+      groups.forEach(g => {
+        box.innerHTML += `<div class="list-item"><span>👥 <strong>${g}</strong></span><button class="copy-b" onclick="closeDrawer('groupDrawer'); setNote('${g} চালু হয়েছে')">প্রবেশ</button></div>`;
+      });
+    }
+
+    function addGroup() {
+      const inp = document.getElementById("grpInp");
+      const name = inp.value.trim();
+      if (!name) return;
+      groups.unshift(name);
+      inp.value = "";
+      drawGroups();
+      setNote(`"${name}" গ্রুপ তৈরি হয়েছে`);
+    }
+  </script>
+</body>
+</html>
