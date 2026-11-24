@@ -1,1 +1,601 @@
-  
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>JoyLive - Live Video Chat</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #090d16; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
+
+    /* Fullscreen Mobile Frame */
+    .phone-frame {
+      position: relative; width: 100%; max-width: 430px; height: 100vh; max-height: 880px;
+      background: #111827; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;
+    }
+
+    /* Fullscreen Live Background (Image or Real Camera) */
+    .live-bg {
+      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;
+      transition: opacity 0.3s ease;
+    }
+    #myCam { display: none; transform: scaleX(-1); }
+
+    /* Dark Gradient Overlay for Readability */
+    .vignette {
+      position: absolute; inset: 0; z-index: 2; pointer-events: none;
+      background: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.05) 35%, rgba(0,0,0,0.15) 60%, rgba(0,0,0,0.88) 100%);
+    }
+
+    /* Top Bar (Host Info, Coins, LIVE Badge) */
+    .top-hud {
+      position: relative; z-index: 5; display: flex; justify-content: space-between; align-items: flex-start;
+      padding: 16px 14px;
+    }
+    .host-pill {
+      display: flex; align-items: center; gap: 8px; background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(10px); padding: 5px 12px 5px 6px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.15);
+    }
+    .host-avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 1.5px solid #f43f5e; }
+    .host-meta h4 { font-size: 13px; font-weight: 700; line-height: 1.1; }
+    .host-meta span { font-size: 10px; color: #cbd5e1; }
+
+    .right-hud { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    /* Exact LIVE Badge from Screenshot */
+    .live-badge {
+      background: rgba(15, 23, 42, 0.72); backdrop-filter: blur(8px);
+      color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 0.5px;
+      padding: 5px 11px; border-radius: 999px; display: flex; align-items: center; gap: 6px;
+    }
+    .live-dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 8px #ef4444; animation: pulse 1.3s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+    .coin-chip {
+      background: rgba(245, 158, 11, 0.25); border: 1px solid rgba(251, 191, 36, 0.5);
+      backdrop-filter: blur(8px); color: #fde68a; font-size: 12px; font-weight: 700;
+      padding: 5px 11px; border-radius: 999px; cursor: pointer;
+    }
+
+    /* Floating Side Quick Menu (Groups, Withdraw, Camera, Next Match) */
+    .side-dock {
+      position: absolute; right: 12px; top: 120px; z-index: 5;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .dock-btn {
+      width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(15, 23, 42, 0.52); backdrop-filter: blur(8px);
+      color: #fff; font-size: 17px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+    .dock-label { font-size: 9px; margin-top: 2px; color: #e2e8f0; text-align: center; font-weight: 600; }
+
+    /* Bottom Area: Live Comments + Exact Screenshot Control Buttons */
+    .bottom-hud { position: relative; z-index: 5; padding: 12px 14px 22px; display: flex; flex-direction: column; gap: 10px; }
+
+    /* Transparent Floating Chat Stream */
+    .chat-stream {
+      max-height: 135px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
+      mask-image: linear-gradient(to bottom, transparent, black 18%);
+    }
+    .chat-bubble {
+      align-self: flex-start; background: rgba(15, 23, 42, 0.52); backdrop-filter: blur(6px);
+      padding: 6px 11px; border-radius: 14px; font-size: 12px; max-width: 82%; line-height: 1.35;
+    }
+    .chat-bubble strong { color: #fda4af; }
+    .chat-bubble.gift { background: rgba(245, 158, 11, 0.35); border: 1px solid rgba(251, 191, 36, 0.45); }
+
+    /* Quick Gift Strip */
+    .gift-strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+    .gift-pill {
+      background: rgba(255,255,255,0.14); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.15);
+      color: #fff; padding: 5px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; cursor: pointer;
+    }
+
+    /* Exact Screenshot Control Row (Mic - Pink Video Button - Speaker) */
+    .main-controls {
+      display: flex; justify-content: center; align-items: center; gap: 22px; margin: 4px 0;
+    }
+    .circle-btn {
+      width: 52px; height: 52px; border-radius: 50%; border: none;
+      background: rgba(255, 255, 255, 0.24); backdrop-filter: blur(10px);
+      color: #fff; font-size: 20px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: transform 0.15s, background 0.2s;
+    }
+    .circle-btn:active { transform: scale(0.93); }
+    .circle-btn.muted { background: rgba(239, 68, 68, 0.8); }
+
+    /* Signature Pink Center Video Call Button from Screenshot */
+    .pink-video-btn {
+      width: 68px; height: 68px; border-radius: 50%; border: none;
+      background: #f43f5e; box-shadow: 0 8px 25px rgba(244, 63, 94, 0.55);
+      color: #fff; font-size: 26px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: transform 0.15s;
+    }
+    .pink-video-btn.active-call { background: #10b981; box-shadow: 0 8px 25px rgba(16, 185, 129, 0.55); }
+
+    /* Bottom Input Bar */
+    .input-bar { display: flex; gap: 8px; align-items: center; }
+    .input-bar input {
+      flex: 1; background: rgba(255,255,255,0.16); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2); border-radius: 999px;
+      padding: 10px 14px; color: #fff; font-size: 13px; outline: none;
+    }
+    .input-bar input::placeholder { color: #cbd5e1; }
+    .send-btn {
+      background: #f43f5e; color: #fff; border: none; padding: 10px 16px;
+      border-radius: 999px; font-weight: 700; font-size: 12px; cursor: pointer;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: absolute; top: 72px; left: 50%; transform: translateX(-50%); z-index: 20;
+      background: rgba(15, 23, 42, 0.88); border: 1px solid rgba(255,255,255,0.15);
+      padding: 7px 14px; border-radius: 999px; font-size: 12px; font-weight: 600;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+
+    /* Bottom Sheet Modal for Top-up, Withdraw, Groups */
+    .modal-backdrop {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.65); z-index: 30;
+      display: none; align-items: flex-end;
+    }
+    .modal-backdrop.open { display: flex; }
+    .sheet {
+      width: 100%; background: #1e293b; color: #f8fafc; border-radius: 24px 24px 0 0;
+      padding: 18px 16px 24px; max-height: 82vh; overflow-y: auto;
+    }
+    .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .close-sheet { background: rgba(255,255,255,0.12); border: none; color: #fff; width: 30px; height: 30px; border-radius: 50%; font-weight: 700; cursor: pointer; }
+
+    .pay-box {
+      background: rgba(244, 63, 94, 0.15); border: 1px dashed #fb7185; border-radius: 12px;
+      padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; margin: 10px 0;
+    }
+    .copy-pill { background: #f43f5e; color: #fff; border: none; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; }
+
+    .field-label { display: block; font-size: 12px; color: #cbd5e1; margin: 10px 0 4px; }
+    .sheet input, .sheet select {
+      width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #475569;
+      background: #0f172a; color: #fff; font-size: 14px;
+    }
+    .sheet-btn {
+      width: 100%; margin-top: 12px; padding: 12px; border: none; border-radius: 12px;
+      background: #f43f5e; color: #fff; font-weight: 700; font-size: 14px; cursor: pointer;
+    }
+    .group-card {
+      background: #0f172a; padding: 10px 12px; border-radius: 12px; margin-top: 8px;
+      display: flex; justify-content: space-between; align-items: center; font-size: 13px;
+    }
+    .log-row { font-size: 11px; color: #94a3b8; padding: 6px 0; border-bottom: 1px solid #334155; }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <!-- Fullscreen Live Video / Host Stream -->
+    <img id="hostBg" class="live-bg" src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&q=85" alt="Live Stream" />
+    <video id="myCam" class="live-bg" autoplay playsinline muted></video>
+    <div class="vignette"></div>
+
+    <div id="toast" class="toast">মেসেজ</div>
+
+    <!-- Top HUD -->
+    <div class="top-hud">
+      <div class="host-pill">
+        <img id="hostThumb" class="host-avatar" src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200&q=80" alt="Avatar" />
+        <div class="host-meta">
+          <h4 id="hostName">Riya • 4.4 ★</h4>
+          <span id="callStatus">লাইভ চলছে • ১.৪K ভিউয়ার</span>
+        </div>
+      </div>
+
+      <div class="right-hud">
+        <div class="live-badge"><span class="live-dot"></span> LIVE</div>
+        <div class="coin-chip" onclick="openSheet('topupSheet')">🪙 <span id="coinCount">500</span> (+ টপ-আপ)</div>
+      </div>
+    </div>
+
+    <!-- Floating Right Side Actions -->
+    <div class="side-dock">
+      <div>
+        <button class="dock-btn" onclick="nextMatch()">⏭</button>
+        <div class="dock-label">নেক্সট</div>
+      </div>
+      <div>
+        <button class="dock-btn" onclick="toggleCamera()">📷</button>
+        <div class="dock-label">ক্যামেরা</div>
+      </div>
+      <div>
+        <button class="dock-btn" onclick="openSheet('groupSheet')">👥</button>
+        <div class="dock-label">গ্রুপ</div>
+      </div>
+      <div>
+        <button class="dock-btn" onclick="openSheet('withdrawSheet')">💸</button>
+        <div class="dock-label">উইথড্র</div>
+      </div>
+      <div>
+        <button class="dock-btn" onclick="blockUser()">🚫</button>
+        <div class="dock-label">ব্লক</div>
+      </div>
+    </div>
+
+    <!-- Bottom HUD -->
+    <div class="bottom-hud">
+      <!-- Live Chat Stream -->
+      <div id="chatStream" class="chat-stream">
+        <div class="chat-bubble"><strong>Riya:</strong> হাই! ভিডিও কল বা চ্যাটে কথা বলুন ✨</div>
+      </div>
+
+      <!-- Virtual Gifts -->
+      <div class="gift-strip">
+        <button class="gift-pill" onclick="sendGift('🌹 গোলাপ', 20)">🌹 গোলাপ (২০)</button>
+        <button class="gift-pill" onclick="sendGift('💖 হার্ট', 50)">💖 হার্ট (৫০)</button>
+        <button class="gift-pill" onclick="sendGift('👑 মুকুট', 100)">👑 মুকুট (১০০)</button>
+        <button class="gift-pill" onclick="sendGift('🚀 রকেট', 250)">🚀 রকেট (২৫০)</button>
+      </div>
+
+      <!-- Exact Screenshot 3-Button Row -->
+      <div class="main-controls">
+        <button id="micBtn" class="circle-btn muted" onclick="toggleMic()" title="Mute Mic">🎙️</button>
+        <button id="videoCallBtn" class="pink-video-btn" onclick="toggleVideoCall()" title="Start/End Video Call">📹</button>
+        <button id="spkBtn" class="circle-btn" onclick="toggleSpeaker()" title="Speaker">🔊</button>
+      </div>
+
+      <!-- Live Message Input -->
+      <form class="input-bar" onsubmit="sendMessage(event)">
+        <input id="msgInput" type="text" placeholder="লাইভ চ্যাটে লিখুন (-৫ কয়েন)..." />
+        <button class="send-btn" type="submit">পাঠান</button>
+      </form>
+    </div>
+
+    <!-- 1. TOP-UP MODAL (NAGAD & BKASH) -->
+    <div id="topupSheet" class="modal-backdrop" onclick="closeOnOutside(event, 'topupSheet')">
+      <div class="sheet">
+        <div class="sheet-header">
+          <strong>🪙 কয়েন টপ-আপ (১ টাকা = ১ কয়েন)</strong>
+          <button class="close-sheet" onclick="closeSheet('topupSheet')">✕</button>
+        </div>
+
+        <label class="field-label">পেমেন্ট মেথড বাছাই করুন</label>
+        <select id="payMethod" onchange="changePayMethod()">
+          <option value="Nagad">নগদ (Nagad)</option>
+          <option value="bKash">বিকাশ (bKash)</option>
+        </select>
+
+        <div class="pay-box">
+          <div>
+            <div style="font-size:11px; color:#fda4af;">এই <span id="payMethodText">নগদ</span> নম্বরে Send Money করুন:</div>
+            <strong id="receiveNum" style="font-size:16px; letter-spacing:0.5px;">01401912576</strong>
+          </div>
+          <button type="button" class="copy-pill" onclick="copyReceiveNum()">কপি</button>
+        </div>
+
+        <label class="field-label">টাকার পরিমাণ</label>
+        <input type="number" id="topupAmt" placeholder="যেমন: 200" min="10" />
+        <label class="field-label">ট্রানজেকশন ID (TrxID)</label>
+        <input type="text" id="topupTrx" placeholder="যেমন: TRX892341" />
+        <button class="sheet-btn" onclick="confirmTopup()">কয়েন যুক্ত করুন</button>
+
+        <div style="margin-top:14px;">
+          <strong style="font-size:12px;">সাম্প্রতিক লেনদেন</strong>
+          <div id="txLogs"><div class="log-row">• শুরুতে ৫০০ কয়েন ব্যালেন্স দেওয়া হয়েছে।</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. WITHDRAW MODAL (20% COMMISSION) -->
+    <div id="withdrawSheet" class="modal-backdrop" onclick="closeOnOutside(event, 'withdrawSheet')">
+      <div class="sheet">
+        <div class="sheet-header">
+          <strong>💸 কয়েন উইথড্র (২০% কমিশন)</strong>
+          <button class="close-sheet" onclick="closeSheet('withdrawSheet')">✕</button>
+        </div>
+
+        <label class="field-label">উইথড্র কয়েন পরিমাণ</label>
+        <input type="number" id="wdAmt" placeholder="যেমন: 200" oninput="previewWd()" />
+        <label class="field-label">আপনার নগদ / বিকাশ নম্বর</label>
+        <input type="text" id="wdPhone" placeholder="01XXXXXXXXX" />
+        <div id="wdCalcText" style="margin-top:10px; font-size:12px; color:#fde68a;">কমিশন (২০%): ৳0 | আপনি পাবেন: ৳0</div>
+        <button class="sheet-btn" onclick="confirmWithdraw()">উইথড্র রিকোয়েস্ট পাঠান</button>
+      </div>
+    </div>
+
+    <!-- 3. UNLIMITED FREE GROUPS MODAL -->
+    <div id="groupSheet" class="modal-backdrop" onclick="closeOnOutside(event, 'groupSheet')">
+      <div class="sheet">
+        <div class="sheet-header">
+          <strong>👥 ফ্রি গ্রুপ তৈরি ও চ্যাট</strong>
+          <button class="close-sheet" onclick="closeSheet('groupSheet')">✕</button>
+        </div>
+
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="newGrpInput" placeholder="নতুন গ্রুপের নাম..." />
+          <button class="copy-pill" style="padding:0 14px;" onclick="addNewGroup()">তৈরি</button>
+        </div>
+
+        <div id="grpListBox" style="margin-top:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const NUMBERS = {
+      Nagad: "01401912576",
+      bKash: "01617520997"
+    };
+
+    const HOSTS = [
+      { name: "Riya", rating: "4.4", viewers: "১.৪K", img: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&q=85" },
+      { name: "Nadia", rating: "4.7", viewers: "২.১K", img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&q=85" },
+      { name: "Tania", rating: "4.5", viewers: "৯৮০", img: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&q=85" }
+    ];
+
+    let coins = 500;
+    let hostIndex = 0;
+    let micActive = false;
+    let speakerActive = true;
+    let inVideoCall = false;
+    let callTimer = null;
+    let seconds = 0;
+    let localStream = null;
+    let groups = ["ঢাকা লাইভ আড্ডা", "নাইট চ্যাট ক্লাব"];
+
+    function showToast(text) {
+      const t = document.getElementById("toast");
+      t.innerText = text;
+      t.classList.add("show");
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => t.classList.remove("show"), 2200);
+    }
+
+    function updateCoins() {
+      document.getElementById("coinCount").innerText = coins;
+    }
+
+    function addLog(text) {
+      const box = document.getElementById("txLogs");
+      const div = document.createElement("div");
+      div.className = "log-row";
+      div.innerText = "• " + text;
+      box.prepend(div);
+    }
+
+    /* Screenshot 3 Controls */
+    function toggleMic() {
+      micActive = !micActive;
+      document.getElementById("micBtn").classList.toggle("muted", !micActive);
+      showToast(micActive ? "মাইক চালু হয়েছে" : "মাইক মিউট করা হয়েছে");
+    }
+
+    function toggleSpeaker() {
+      speakerActive = !speakerActive;
+      document.getElementById("spkBtn").classList.toggle("muted", !speakerActive);
+      showToast(speakerActive ? "স্পিকার চালু" : "স্পিকার বন্ধ");
+    }
+
+    function toggleVideoCall() {
+      const btn = document.getElementById("videoCallBtn");
+      if (inVideoCall) {
+        clearInterval(callTimer);
+        inVideoCall = false;
+        btn.classList.remove("active-call");
+        document.getElementById("callStatus").innerText = `কল শেষ • ${HOSTS[hostIndex].viewers} ভিউয়ার`;
+        showToast("ভিডিও কল শেষ হয়েছে");
+        return;
+      }
+
+      if (coins < 50) {
+        showToast("ভিডিও কলের জন্য ৫০ কয়েন প্রয়োজন!");
+        openSheet("topupSheet");
+        return;
+      }
+
+      coins -= 50;
+      updateCoins();
+      addLog("ভিডিও কল শুরু (-৫০ কয়েন)");
+      inVideoCall = true;
+      seconds = 0;
+      btn.classList.add("active-call");
+      showToast("ওয়ান-অন-ওয়ান ভিডিও কল সংযুক্ত হয়েছে!");
+
+      callTimer = setInterval(() => {
+        seconds++;
+        const m = String(Math.floor(seconds / 60)).padStart(2, "0");
+        const s = String(seconds % 60).padStart(2, "0");
+        document.getElementById("callStatus").innerText = `কলে সংযুক্ত • ${m}:${s}`;
+
+        if (seconds % 60 === 0) {
+          if (coins < 50) {
+            toggleVideoCall();
+            showToast("কয়েন শেষ হওয়ায় কল কেটে গেছে");
+          } else {
+            coins -= 50;
+            updateCoins();
+            addLog("ভিডিও কল ১ মিনিট চার্জ (-৫০ কয়েন)");
+          }
+        }
+      }, 1000);
+    }
+
+    /* Real Front Camera Preview */
+    async function toggleCamera() {
+      const cam = document.getElementById("myCam");
+      const bg = document.getElementById("hostBg");
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+        cam.style.display = "none";
+        bg.style.display = "block";
+        showToast("নিজের ক্যামেরা বন্ধ হয়েছে");
+        return;
+      }
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        cam.srcObject = localStream;
+        bg.style.display = "none";
+        cam.style.display = "block";
+        showToast("লাইভ ক্যামেরা চালু হয়েছে");
+      } catch (e) {
+        showToast("ক্যামেরা পারমিশন পাওয়া যায়নি");
+      }
+    }
+
+    /* Match & Block */
+    function nextMatch() {
+      if (inVideoCall) toggleVideoCall();
+      hostIndex = (hostIndex + 1) % HOSTS.length;
+      const h = HOSTS[hostIndex];
+      document.getElementById("hostName").innerText = `${h.name} • ${h.rating} ★`;
+      document.getElementById("callStatus").innerText = `লাইভ চলছে • ${h.viewers} ভিউয়ার`;
+      document.getElementById("hostBg").src = h.img;
+      document.getElementById("hostThumb").src = h.img;
+      appendChat(h.name, "হ্যালো! কেমন আছেন?", false);
+      showToast(`নতুন ম্যাচ: ${h.name}`);
+    }
+
+    function blockUser() {
+      const current = HOSTS[hostIndex].name;
+      showToast(`${current}-কে ব্লক ও রিপোর্ট করা হয়েছে`);
+      setTimeout(nextMatch, 600);
+    }
+
+    /* Live Chat & Virtual Gifts */
+    function appendChat(sender, text, isGift) {
+      const stream = document.getElementById("chatStream");
+      const div = document.createElement("div");
+      div.className = "chat-bubble" + (isGift ? " gift" : "");
+      div.innerHTML = `<strong>${sender}:</strong> ${text}`;
+      stream.appendChild(div);
+      stream.scrollTop = stream.scrollHeight;
+    }
+
+    function sendMessage(e) {
+      e.preventDefault();
+      const inp = document.getElementById("msgInput");
+      const txt = inp.value.trim();
+      if (!txt) return;
+      if (coins < 5) {
+        showToast("মেসেজ পাঠাতে ৫ কয়েন লাগবে");
+        return;
+      }
+      coins -= 5;
+      updateCoins();
+      appendChat("আপনি", txt, false);
+      inp.value = "";
+    }
+
+    function sendGift(name, cost) {
+      if (coins < cost) {
+        showToast("গিফট পাঠাতে পর্যাপ্ত কয়েন নেই!");
+        openSheet("topupSheet");
+        return;
+      }
+      coins -= cost;
+      updateCoins();
+      addLog(`গিফট ${name} (-${cost} কয়েন)`);
+      appendChat("আপনি", `${name} গিফট পাঠিয়েছেন!`, true);
+      showToast(`${name} পাঠানো হয়েছে!`);
+    }
+
+    /* Modals */
+    function openSheet(id) {
+      document.getElementById(id).classList.add("open");
+      if (id === "groupSheet") renderGroups();
+    }
+    function closeSheet(id) {
+      document.getElementById(id).classList.remove("open");
+    }
+    function closeOnOutside(e, id) {
+      if (e.target.id === id) closeSheet(id);
+    }
+
+    /* Top-up (Nagad 01401912576 & bKash 01617520997) */
+    function changePayMethod() {
+      const m = document.getElementById("payMethod").value;
+      document.getElementById("payMethodText").innerText = m === "Nagad" ? "নগদ" : "বিকাশ";
+      document.getElementById("receiveNum").innerText = NUMBERS[m];
+    }
+
+    function copyReceiveNum() {
+      const num = document.getElementById("receiveNum").innerText;
+      navigator.clipboard?.writeText(num);
+      showToast(`নম্বর কপি হয়েছে: ${num}`);
+    }
+
+    function confirmTopup() {
+      const amt = parseInt(document.getElementById("topupAmt").value, 10);
+      const trx = document.getElementById("topupTrx").value.trim();
+      const method = document.getElementById("payMethod").value;
+      if (!amt || amt <= 0 || !trx) {
+        showToast("সঠিক টাকা ও TrxID দিন");
+        return;
+      }
+      coins += amt;
+      updateCoins();
+      addLog(`${method} টপ-আপ +${amt} কয়েন (TrxID: ${trx})`);
+      document.getElementById("topupAmt").value = "";
+      document.getElementById("topupTrx").value = "";
+      closeSheet("topupSheet");
+      showToast(`${amt} কয়েন যুক্ত হয়েছে!`);
+    }
+
+    /* Withdraw (20% Commission) */
+    function previewWd() {
+      const c = parseFloat(document.getElementById("wdAmt").value) || 0;
+      const fee = Math.round(c * 0.20);
+      const net = c - fee;
+      document.getElementById("wdCalcText").innerText = `কমিশন (২০%): ৳${fee} | আপনি পাবেন: ৳${net}`;
+    }
+
+    function confirmWithdraw() {
+      const c = parseInt(document.getElementById("wdAmt").value, 10);
+      const phone = document.getElementById("wdPhone").value.trim();
+      if (!c || c <= 0 || !phone) {
+        showToast("কয়েন ও রিসিভ নম্বর লিখুন");
+        return;
+      }
+      if (c > coins) {
+        showToast("পর্যাপ্ত কয়েন নেই");
+        return;
+      }
+      const fee = Math.round(c * 0.20);
+      const net = c - fee;
+      coins -= c;
+      updateCoins();
+      addLog(`উইথড্র ${c} কয়েন → ৳${net} পাবেন (২০% কমিশন ৳${fee})`);
+      document.getElementById("wdAmt").value = "";
+      previewWd();
+      closeSheet("withdrawSheet");
+      showToast(`উইথড্র জমা হয়েছে! পাবেন ৳${net}`);
+    }
+
+    /* Free Groups */
+    function renderGroups() {
+      const box = document.getElementById("grpListBox");
+      box.innerHTML = "";
+      groups.forEach(g => {
+        const div = document.createElement("div");
+        div.className = "group-card";
+        div.innerHTML = `<span>👥 <strong>${g}</strong></span><button class="copy-pill" onclick="joinGroup('${g}')">প্রবেশ</button>`;
+        box.appendChild(div);
+      });
+    }
+
+    function addNewGroup() {
+      const inp = document.getElementById("newGrpInput");
+      const name = inp.value.trim();
+      if (!name) return;
+      groups.unshift(name);
+      inp.value = "";
+      renderGroups();
+      showToast(`"${name}" গ্রুপ তৈরি হয়েছে`);
+    }
+
+    function joinGroup(name) {
+      closeSheet("groupSheet");
+      appendChat("System", `আপনি "${name}" গ্রুপে যুক্ত হয়েছেন।`, true);
+      showToast(`${name} গ্রুপ চালু হয়েছে`);
+    }
+  </script>
+</body>
+</html>
